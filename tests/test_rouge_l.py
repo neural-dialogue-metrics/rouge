@@ -1,5 +1,4 @@
 import unittest
-import subprocess
 
 from rouge.rouge import rouge_l_summary_level, rouge_l_sentence_level
 from rouge.tests.wrapper import rouge_l_sentence_level as _rouge_l_sentence_level

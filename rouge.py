@@ -143,8 +143,9 @@ def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=0.5):
     reference_ngrams = count_ngrams(reference_sentence, n)
     total_matches = _clipped_ngram_count(summary_ngrams, reference_ngrams)
 
-    recall_denominator = len(reference_sentence)
-    precision_denominator = len(summary_sentence)
+    # Hey! why are you normalizing your n-gram with len!!!
+    recall_denominator = num_ngrams(reference_sentence, n)
+    precision_denominator = num_ngrams(summary_sentence, n)
     return _f1_measure(total_matches, recall_denominator, precision_denominator, alpha)
 
 
