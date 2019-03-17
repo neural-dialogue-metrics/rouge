@@ -1,5 +1,4 @@
 import collections
-import fractions
 import itertools
 
 __all__ = ["rouge_n_sentence_level", "rouge_l_sentence_level", "rouge_l_summary_level"]
@@ -16,7 +15,7 @@ def num_ngrams(words, n):
 
     :param words: a list of tokens.
     :param n: int.
-    :return:
+    :return: number of n-gram.
     """
     return max(len(words) - n + 1, 0)
 
@@ -59,7 +58,6 @@ def _divide_or_zero(numerator, denominator):
     """
     Divide numerator by denominator. If the latter is 0, return 0.
 
-    >>> from fractions import Fraction
     >>> _divide_or_zero(1, 2)
     Fraction(1, 2)
     >>> _divide_or_zero(1, 0)
@@ -70,8 +68,8 @@ def _divide_or_zero(numerator, denominator):
     :return: Fraction object.
     """
     if denominator == 0:
-        return fractions.Fraction()
-    return fractions.Fraction(numerator, denominator)
+        return 0
+    return numerator / denominator
 
 
 def _f1_measure(numerator, r_denominator, p_denominator, alpha):
@@ -92,9 +90,10 @@ def _f1_measure(numerator, r_denominator, p_denominator, alpha):
     """
     recall = _divide_or_zero(numerator, r_denominator)
     precision = _divide_or_zero(numerator, p_denominator)
-    f1 = (precision * recall) / ((1 - alpha) * precision + alpha * recall)
+    f1 = _divide_or_zero(precision * recall, (1 - alpha) * precision + alpha * recall)
     precision = float(precision)
     recall = float(recall)
+    f1 = float(f1)
     return recall, precision, f1
 
 
@@ -222,7 +221,7 @@ def _lcs_sequence(x, y):
     Returns:
       sequence: LCS of x and y
     """
-    i, j = len(x), len(y)
+    m, n = len(x), len(y)
     table = _compute_lcs_table(x, y)
 
     def _recon(i, j):
@@ -230,14 +229,13 @@ def _lcs_sequence(x, y):
         if i == 0 or j == 0:
             return []
         elif x[i - 1] == y[j - 1]:
-            return _recon(i - 1, j - 1) + [(x[i - 1], i)]
+            return _recon(i - 1, j - 1) + [x[i - 1]]
         elif table[i - 1, j] > table[i, j - 1]:
             return _recon(i - 1, j)
         else:
             return _recon(i, j - 1)
 
-    recon_tuple = tuple(map(lambda x: x[0], _recon(i, j)))
-    return recon_tuple
+    return _recon(m, n)
 
 
 def _lcs_length(x, y):
@@ -246,12 +244,14 @@ def _lcs_length(x, y):
     and y.
     Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence
 
-    Args:
-      x, List[string]: sequence of words
-      y, List[string]: sequence of words
+    >>> _lcs_length('ABCDE', 'CD')
+    2
+    >>> _lcs_length('the police killed the gunman'.split(), 'gunman police killed'.split())
+    2
 
-    Returns
-      integer: Length of LCS between x and y
+    :param x: sequence of words
+    :param y: sequence of words
+    :return: Length of LCS between x and y
     """
     table = _compute_lcs_table(x, y)
     n, m = len(x), len(y)
@@ -260,6 +260,7 @@ def _lcs_length(x, y):
 
 def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=0.5):
     """
+    Calculate sentence level ROUGE-L.
 
     :param summary_sentence: a list of token.
     :param reference_sentence: a *single* reference, a list of tokens.
@@ -305,7 +306,7 @@ def _lcs_union_value(summary_sentences, reference_sentence):
 
 def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=0.5):
     """
-
+    Calculate the summary level ROUGE-L.
     :param summary_sentences: a list of sentence, each sentence is a list of tokens.
     :param reference_sentences: Same shape as summary.
     :param alpha:

@@ -1,7 +1,7 @@
 import unittest
 
 from rouge.rouge import rouge_n_sentence_level
-from rouge.tests import rouge_n as _rouge_n
+from rouge.tests.wrapper import rouge_l_sentence_level as _rouge_n
 
 
 class TestRougeN(unittest.TestCase):
