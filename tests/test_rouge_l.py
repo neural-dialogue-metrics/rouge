@@ -20,12 +20,12 @@ class TestRougeL(unittest.TestCase):
         pass
 
     def test_sentence_level_(self):
-        for data in load_sentence_pairs():
-            tokens = list(map(lambda s: s.split(), data))
-            score = rouge_l_sentence_level(*tokens)
-            score_ = _rouge_l_sentence_level(*data)
+        for ours_data, theirs_data in load_sentence_pairs():
+            score = rouge_l_sentence_level(*ours_data)
+            score_ = _rouge_l_sentence_level(*theirs_data)
+
             for ours, theirs in zip(score, score_):
-                self.assertAlmostEqual(ours, theirs, places=4, msg="""
-                        data = %r
-                        tokens = %r
-                        """ % (data, tokens))
+                self.assertAlmostEqual(ours, theirs, delta=1e-5, msg="""
+                        ours_data = %r
+                        theirs_tokens = %r
+                        """ % (ours_data, theirs_data))

@@ -31,6 +31,8 @@ def make_rouge(**kwargs):
     kwargs.setdefault('ROUGE_SU4', False)
     kwargs.setdefault('stemming', False)
     kwargs.setdefault('favor', True)  # use alpha
+    kwargs.setdefault('word_level', True)
+    kwargs.setdefault('length_limit', False)
     return Pythonrouge(**kwargs)
 
 

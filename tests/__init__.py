@@ -21,7 +21,9 @@ def load_data():
 def load_sentence_pairs():
     for raw_data in load_data().values():
         for pair in zip(raw_data[SUMMARIES], raw_data[REFERENCES]):
-            yield [clean(sentence) for sentence in pair]
+            theirs = [clean(sentence) for sentence in pair]
+            ours = [sentence.split() for sentence in theirs]
+            yield ours, theirs
 
 
 # One pair of data points.

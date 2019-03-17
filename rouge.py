@@ -91,9 +91,6 @@ def _f1_measure(numerator, r_denominator, p_denominator, alpha):
     recall = _divide_or_zero(numerator, r_denominator)
     precision = _divide_or_zero(numerator, p_denominator)
     f1 = _divide_or_zero(precision * recall, (1 - alpha) * precision + alpha * recall)
-    precision = float(precision)
-    recall = float(recall)
-    f1 = float(f1)
     return recall, precision, f1
 
 
@@ -121,9 +118,10 @@ def _clipped_ngram_count(summary_ngrams, reference_ngrams):
     """
     overlap = summary_ngrams & reference_ngrams
     return sum(overlap.values())
+    # return len(overlap)
 
 
-def rouge_n_sentence_level(summary_sentence, reference_sentences, n, alpha=0.5):
+def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=0.5):
     """
     Calculate ROUGE-N on already preprocessed sentences.
 
@@ -136,18 +134,17 @@ def rouge_n_sentence_level(summary_sentence, reference_sentences, n, alpha=0.5):
     (0.6, 0.75, 0.6666666666666666)
 
     :param summary_sentence: a list of tokens.
-    :param reference_sentences: a nested list of tokens.
+    :param reference_sentence: a nested list of tokens.
     :param n: n for ngram.
     :param alpha: weight on the recall.
     :return: a 3-tuple, recall, precision and f1 measure.
     """
     summary_ngrams = count_ngrams(summary_sentence, n)
-    total_matches = sum(
-        _clipped_ngram_count(summary_ngrams, count_ngrams(ref, n)) for ref in reference_sentences
-    )
+    reference_ngrams = count_ngrams(reference_sentence, n)
+    total_matches = _clipped_ngram_count(summary_ngrams, reference_ngrams)
 
-    recall_denominator = sum(num_ngrams(ref, n) for ref in reference_sentences)
-    precision_denominator = len(reference_sentences) * num_ngrams(summary_sentence, n)
+    recall_denominator = len(reference_sentence)
+    precision_denominator = len(summary_sentence)
     return _f1_measure(total_matches, recall_denominator, precision_denominator, alpha)
 
 
