@@ -121,14 +121,17 @@ def _clipped_sum(summary_ngrams, reference_ngrams):
     return sum(overlap.values())
 
 
-def rouge_n(summary, references, n=2, alpha=0.5):
+def rouge_n(summary, references, n, alpha=0.5):
     """
     Calculate ROUGE-N on already preprocessed sentences.
 
     >>> summary = 'gunman kill the police'.split()
     >>> reference = 'the police killed the gunman'.split()
-    >>> rouge_n(summary, [reference])
+
+    >>> rouge_n(summary, [reference], n=2)
     (0.25, 0.3333333333333333, 0.28571428571428575)
+    >>> rouge_n(summary, [reference], n=1)
+    (0.6, 0.75, 0.6666666666666666)
 
     :param summary: a list of tokens.
     :param references: a nested list of tokens.
