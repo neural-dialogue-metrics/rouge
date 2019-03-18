@@ -299,7 +299,9 @@ def _lcs_union_value(summary_sentences, reference_sentence):
         # Note here all words get unique.
         lcs_set = set(_lcs_sequence(sentence, reference_sentence))
         lcs_union |= lcs_set
-    return len(lcs_union)
+    # Note this is only used in summary level lcs.
+    return sum(lcs_union.values())
+    # return len(lcs_union)
 
 
 def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=0.5):
