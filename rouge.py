@@ -1,16 +1,39 @@
+# Copyright 2019 Cong Feng. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+"""
+Yet another Python implementation of ROUGE.
+"""
+
 import collections
 import itertools
 
-__all__ = ["rouge_n_sentence_level", "rouge_l_sentence_level", "rouge_l_summary_level", "rouge_n_summary_level"]
+__all__ = [
+    "rouge_n_sentence_level",
+    "rouge_l_sentence_level",
+    "rouge_l_summary_level",
+    "rouge_n_summary_level"
+]
 
 
-def num_ngrams(words, n):
+def _num_ngrams(words, n):
     """
     Return the number of nth gram of words.
 
-    >>> num_ngrams([1, 2, 3], 3)
+    >>> _num_ngrams([1, 2, 3], 3)
     1
-    >>> num_ngrams([1, 2, 3], 2)
+    >>> _num_ngrams([1, 2, 3], 2)
     2
 
     :param words: a list of tokens.
@@ -20,38 +43,38 @@ def num_ngrams(words, n):
     return max(len(words) - n + 1, 0)
 
 
-def get_ngram(words, n):
+def _get_ngram(words, n):
     """
     Return a generator on all nth grams of words.
 
-    >>> list(get_ngram([1, 2, 3], 2))
+    >>> list(_get_ngram([1, 2, 3], 2))
     [(1, 2), (2, 3)]
-    >>> list(get_ngram([1, 2, 3], 1))
+    >>> list(_get_ngram([1, 2, 3], 1))
     [(1,), (2,), (3,)]
 
     :param words: a list of tokens.
     :param n: int.
     :return: a generator
     """
-    for i in range(num_ngrams(words, n)):
+    for i in range(_num_ngrams(words, n)):
         n_gram = words[i:i + n]
         yield tuple(n_gram)
 
 
-def count_ngrams(words, n):
+def _count_ngrams(words, n):
     """
     Collect nth gram of words into a Counter.
 
-    >>> count_ngrams([1, 1, 2, 2], 2)
+    >>> _count_ngrams([1, 1, 2, 2], 2)
     Counter({(1, 1): 1, (1, 2): 1, (2, 2): 1})
-    >>> count_ngrams([1, 2, 3], 2)
+    >>> _count_ngrams([1, 2, 3], 2)
     Counter({(1, 2): 1, (2, 3): 1})
 
-    :param words:
-    :param n:
-    :return:
+    :param words: a list of tokens.
+    :param n: N for ngrams.
+    :return: a Counter.
     """
-    return collections.Counter(get_ngram(words, n))
+    return collections.Counter(_get_ngram(words, n))
 
 
 def _divide_or_zero(numerator, denominator):
@@ -59,22 +82,27 @@ def _divide_or_zero(numerator, denominator):
     Divide numerator by denominator. If the latter is 0, return 0.
 
     >>> _divide_or_zero(1, 2)
-    Fraction(1, 2)
+    0.5
     >>> _divide_or_zero(1, 0)
-    Fraction(0, 1)
+    0.0
 
-    :param numerator: int
-    :param denominator: int
-    :return: Fraction object.
+    :param numerator: float.
+    :param denominator: float.
+    :return: float.
     """
     if denominator == 0:
-        return 0
+        return 0.0
     return numerator / denominator
 
 
 def _f1_measure(numerator, r_denominator, p_denominator, alpha):
     """
     Compute a weighted F-measure.
+
+    Effectively given by:
+        Recall = numerator / r_p_denominator
+        Precision = numerator / p_denominator
+        F1_Measure = Recall * Precision / (alpha * Recall + 1 - alpha) * Precision)
 
     >>> _f1_measure(1, 2, 3, 0.5)
     (0.5, 0.3333333333333333, 0.4)
@@ -87,9 +115,12 @@ def _f1_measure(numerator, r_denominator, p_denominator, alpha):
     :param p_denominator: 
     :param alpha: the weighting factor.
     :return: 3-tuple of recall, precision and f1.
+    :raise ValueError: If alpha is not between [0, 1].
     """
     if alpha is None:
         alpha = 0.5
+    if not 0.0 <= alpha <= 1.0:
+        raise ValueError("alpha must be between [0, 1]")
     recall = _divide_or_zero(numerator, r_denominator)
     precision = _divide_or_zero(numerator, p_denominator)
     f1 = _divide_or_zero(precision * recall, (1 - alpha) * precision + alpha * recall)
@@ -115,8 +146,7 @@ def _clipped_ngram_count(summary_ngrams, reference_ngrams):
 
     :param summary_ngrams: a Counter.
     :param reference_ngrams: a Counter
-    :return: int
-
+    :return: the clipped count.
     """
     overlap = summary_ngrams & reference_ngrams
     return sum(overlap.values())
@@ -124,20 +154,20 @@ def _clipped_ngram_count(summary_ngrams, reference_ngrams):
 
 def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=None):
     """
-    Calculate ROUGE-N on already preprocessed sentences.
+    Calculate ROUGE-N on sentence level.
 
-    :param summary_sentence: a list of tokens.
-    :param reference_sentence: a nested list of tokens.
+    :param summary_sentence: a sentence.
+    :param reference_sentence: a sentence.
     :param n: n for ngram.
-    :param alpha: weight on the recall.
+    :param alpha: weight on the recall (default 0.5).
     :return: a 3-tuple, recall, precision and f1 measure.
     """
-    summary_ngrams = count_ngrams(summary_sentence, n)
-    reference_ngrams = count_ngrams(reference_sentence, n)
+    summary_ngrams = _count_ngrams(summary_sentence, n)
+    reference_ngrams = _count_ngrams(reference_sentence, n)
     total_matches = _clipped_ngram_count(summary_ngrams, reference_ngrams)
 
-    recall_denominator = num_ngrams(reference_sentence, n)
-    precision_denominator = num_ngrams(summary_sentence, n)
+    recall_denominator = _num_ngrams(reference_sentence, n)
+    precision_denominator = _num_ngrams(summary_sentence, n)
     return _f1_measure(total_matches, recall_denominator, precision_denominator, alpha)
 
 
@@ -145,14 +175,14 @@ def _flatten_sentences(sentences):
     """
     Flatten a list of sentences into a concatenated list of tokens.
     Adapted from https://stackoverflow.com/questions/952914/how-to-make-a-flat-list-out-of-list-of-lists.
-    :param sentences: a list of sentences.
-    :return: a list of tokens.
 
     >>> s1 = 'the gunman kill police'.split()
     >>> s2 = 'police killed the gunman'.split()
     >>> _flatten_sentences([s1, s2])
     ['the', 'gunman', 'kill', 'police', 'police', 'killed', 'the', 'gunman']
 
+    :param sentences: a list of sentences.
+    :return: a list of tokens.
     """
     return list(itertools.chain.from_iterable(sentences))
 
@@ -164,10 +194,8 @@ def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None)
     :param summary_sentences: a list of sentences.
     :param reference_sentences: a list of sentences.
     :param n: n for ngram.
-    :param alpha:
-    :return:
-
-    >>> rouge_n_summary_level()
+    :param alpha: weight on the recall (default 0.5).
+    :return: a 3-tuple, recall, precision and f1 measure.
     """
     summary_sentences = _flatten_sentences(summary_sentences)
     reference_sentences = _flatten_sentences(reference_sentences)
@@ -184,7 +212,7 @@ def _compute_lcs_table(x, y):
 
     :param x: collection of words
     :param y: collection of words
-    :return Table of dictionary of coord
+    :return Table of dictionary of coord.
     """
     n, m = len(x), len(y)
     table = dict()
@@ -223,10 +251,10 @@ def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
     """
     Calculate sentence level ROUGE-L.
 
-    :param summary_sentence: a list of token.
-    :param reference_sentence: a *single* reference, a list of tokens.
-    :param alpha:
-    :return:
+    :param summary_sentence: a sentence.
+    :param reference_sentence: a sentence.
+    :param alpha: weight on the recall (default 0.5).
+    :return: a 3-tuple, recall, precision and f1 measure.
     """
     lcs_length = _lcs_length(summary_sentence, reference_sentence)
     r_denominator = len(reference_sentence)
@@ -241,10 +269,11 @@ def _lcs_sequence(x, y):
 
     >>> _lcs_sequence('abc', 'bcd')
     [('b', 1, 0), ('c', 2, 1)]
+    >>> _lcs_sequence('', '')
+    []
 
     :param x: sequence of words
     :param y: sequence of words
-
     :return: a list of 3-tuple: the element, its index in x, its index in y.
     """
     m, n = len(x), len(y)
@@ -266,8 +295,9 @@ def _lcs_sequence(x, y):
 
 def _make_lcs_union(summary_sentences, reference_sentence):
     """
-    Returns LCS_u(r_i, C) which is the LCS score of the union longest common
-    subsequence between reference sentence ri and candidate summary C.
+    Returns LCS_u(r_i, C) which is the union longest common subsequence between
+    reference sentence ri and candidate summary C.
+
     For example if
         r_i = w1 w2 w3 w4 w5
         c1 = w1 w2 w6 w7 w8
@@ -275,25 +305,27 @@ def _make_lcs_union(summary_sentences, reference_sentence):
     then:
         LCS(r_i, c1) = "w1 w2"
         LCS(r_i, c2) = "w1 w3 w5"
-    union longest common subsequence of r_i, c1, and c2 is "w1 w2 w3 w5" and
-    LCS_u(r_i, C) = 4.
+    and:
+        LCS_u(r_i, C) = "w1 w2 w3 w5"
 
     >>> r_i = 'w1 w2 w3 w4 w5'.split()
     >>> c1 = 'w1 w2 w6 w7 w8'.split()
     >>> c2 = 'w1 w3 w8 w8 w5'.split()
 
-    >>> _make_lcs_union([c1, c2], r_i)
+    >>> union = _make_lcs_union([c1, c2], r_i)
+    >>> union
+    {0, 1, 2, 4}
+    >>> [r_i[idx] for idx in union]
+    ['w1', 'w2', 'w3', 'w5']
 
-
-    :param summary_sentences: The sentences that have been picked by the summarizer
-    :param reference_sentence: One of the sentences in the reference summaries.
-
-    :return: LCS_u(r_i, C)
+    :param summary_sentences: a list of sentences.
+    :param reference_sentence: a sentence.
+    :return: a set whose element is the indices of words of reference_sentence.
     """
-
     lcs_union = set()
     for sentence in summary_sentences:
         lcs = _lcs_sequence(sentence, reference_sentence)
+        # get the indices of lcs from reference_sentence.
         lcs_set = set(ref_idx for _, _, ref_idx in lcs)
         lcs_union |= lcs_set
     return lcs_union
@@ -312,16 +344,16 @@ def _flatten_and_count_ngrams(sentences, n):
     :param n: N for ngrams.
     :return: Counter.
     """
-    return count_ngrams(_flatten_sentences(sentences), n)
+    return _count_ngrams(_flatten_sentences(sentences), n)
 
 
 def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
     """
     Calculate the summary level ROUGE-L.
-    :param summary_sentences: a list of sentence, each sentence is a list of tokens.
-    :param reference_sentences: Same shape as summary.
-    :param alpha:
-    :return:
+    :param summary_sentences: a list of sentence.
+    :param reference_sentences: a list of sentence.
+    :param alpha: weight on the recall (default 0.5).
+    :return: a 3-tuple, recall, precision and f1 measure.
     """
     summary_unigrams = _flatten_and_count_ngrams(summary_sentences, 1)
     reference_unigrams = _flatten_and_count_ngrams(reference_sentences, 1)
