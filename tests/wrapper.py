@@ -120,7 +120,6 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
     )
     prefix = 'ROUGE-L-'
     score = rouge.calc_score()
-    print(_get_command(rouge))
     return _parse_output(prefix, score)
 
 

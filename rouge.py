@@ -199,35 +199,6 @@ def _compute_lcs_table(x, y):
     return table
 
 
-def _lcs_sequence(x, y):
-    """
-    Returns the Longest Subsequence between x and y.
-    Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence
-
-    Args:
-      x: sequence of words
-      y: sequence of words
-
-    Returns:
-      sequence: LCS of x and y
-    """
-    m, n = len(x), len(y)
-    table = _compute_lcs_table(x, y)
-
-    def _recon(i, j):
-        """private recon calculation"""
-        if i == 0 or j == 0:
-            return []
-        elif x[i - 1] == y[j - 1]:
-            return _recon(i - 1, j - 1) + [i]
-        elif table[i - 1, j] > table[i, j - 1]:
-            return _recon(i - 1, j)
-        else:
-            return _recon(i, j - 1)
-
-    return _recon(m, n)
-
-
 def _lcs_length(x, y):
     """
     Returns the length of the Longest Common Subsequence between sequences x
@@ -263,22 +234,56 @@ def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
     return _f1_measure(lcs_length, r_denominator, p_denominator, alpha)
 
 
-def _lcs_union_value(summary_sentences, reference_sentence):
+def _lcs_sequence(x, y):
+    """
+    Returns the Longest Subsequence between x and y.
+    Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence
+
+    >>> _lcs_sequence('abc', 'bcd')
+    [('b', 1, 0), ('c', 2, 1)]
+
+    :param x: sequence of words
+    :param y: sequence of words
+
+    :return: a list of 3-tuple: the element, its index in x, its index in y.
+    """
+    m, n = len(x), len(y)
+    table = _compute_lcs_table(x, y)
+
+    def _recon(i, j):
+        """private recon calculation"""
+        if i == 0 or j == 0:
+            return []
+        elif x[i - 1] == y[j - 1]:
+            return _recon(i - 1, j - 1) + [(x[i - 1], i - 1, j - 1)]
+        elif table[i - 1, j] > table[i, j - 1]:
+            return _recon(i - 1, j)
+        else:
+            return _recon(i, j - 1)
+
+    return _recon(m, n)
+
+
+def _make_lcs_union(summary_sentences, reference_sentence):
     """
     Returns LCS_u(r_i, C) which is the LCS score of the union longest common
-    subsequence between reference sentence ri and candidate summary C. For example
-    if r_i= w1 w2 w3 w4 w5, and C contains two sentences: c1 = w1 w2 w6 w7 w8 and
-    c2 = w1 w3 w8 w9 w5, then the longest common subsequence of r_i and c1 is
-    "w1 w2" and the longest common subsequence of r_i and c2 is "w1 w3 w5". The
+    subsequence between reference sentence ri and candidate summary C.
+    For example if
+        r_i = w1 w2 w3 w4 w5
+        c1 = w1 w2 w6 w7 w8
+        c2 = w1 w3 w8 w9 w5
+    then:
+        LCS(r_i, c1) = "w1 w2"
+        LCS(r_i, c2) = "w1 w3 w5"
     union longest common subsequence of r_i, c1, and c2 is "w1 w2 w3 w5" and
     LCS_u(r_i, C) = 4.
 
     >>> r_i = 'w1 w2 w3 w4 w5'.split()
     >>> c1 = 'w1 w2 w6 w7 w8'.split()
-    >>> c2 = 'w1 w3 w5'.split()
+    >>> c2 = 'w1 w3 w8 w8 w5'.split()
 
-    >>> _lcs_union_value([c1, c2], r_i)
-    4
+    >>> _make_lcs_union([c1, c2], r_i)
+
 
     :param summary_sentences: The sentences that have been picked by the summarizer
     :param reference_sentence: One of the sentences in the reference summaries.
@@ -288,11 +293,26 @@ def _lcs_union_value(summary_sentences, reference_sentence):
 
     lcs_union = set()
     for sentence in summary_sentences:
-        # Note here all words get unique.
-        lcs_set = set(_lcs_sequence(sentence, reference_sentence))
+        lcs = _lcs_sequence(sentence, reference_sentence)
+        lcs_set = set(ref_idx for _, _, ref_idx in lcs)
         lcs_union |= lcs_set
-    # Note this is only used in summary level lcs.
-    return len(lcs_union)
+    return lcs_union
+
+
+def _flatten_and_count_ngrams(sentences, n):
+    """
+    First flatten a list of sentences, then count ngrams on it.
+
+    >>> s1 = 'the cat sat on the mat'.split()
+    >>> s2 = 'the cat on the mat'.split()
+    >>> _flatten_and_count_ngrams([s1, s2], 1)
+    Counter({('the',): 4, ('cat',): 2, ('on',): 2, ('mat',): 2, ('sat',): 1})
+
+    :param sentences: a list of sentences.
+    :param n: N for ngrams.
+    :return: Counter.
+    """
+    return count_ngrams(_flatten_sentences(sentences), n)
 
 
 def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
@@ -303,8 +323,20 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
     :param alpha:
     :return:
     """
+    summary_unigrams = _flatten_and_count_ngrams(summary_sentences, 1)
+    reference_unigrams = _flatten_and_count_ngrams(reference_sentences, 1)
+
+    total_lcs_words = 0
+    for reference in reference_sentences:
+        lcs_union = _make_lcs_union(summary_sentences, reference)
+        for word in lcs_union:
+            unigram = (reference[word],)
+            if (unigram in summary_unigrams and unigram in reference_unigrams
+                    and summary_unigrams[unigram] > 0 and reference_unigrams[unigram] > 0):
+                summary_unigrams[unigram] -= 1
+                reference_unigrams[unigram] -= 1
+                total_lcs_words += 1
+
     r_denominator = sum(len(sentence) for sentence in reference_sentences)
     p_denominator = sum(len(sentence) for sentence in summary_sentences)
-    lcs_union_sum = sum(_lcs_union_value(summary_sentences, sentence)
-                        for sentence in reference_sentences)
-    return _f1_measure(lcs_union_sum, r_denominator, p_denominator, alpha)
+    return _f1_measure(total_lcs_words, r_denominator, p_denominator, alpha)
