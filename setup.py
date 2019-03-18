@@ -17,7 +17,7 @@ from setuptools import setup
 
 setup(
     name='rouge',
-    version='0.1',
+    version='0.1.0',
     description='implementation of ROUGE family metrics for automatic summarization',
     url='https://github.com/neural-dialogue-metrics/rouge.git',
     author='cgsdfc',
@@ -28,7 +28,7 @@ setup(
         'computational linguistics',
         'automatic summarization',
     ],
-    package='rouge',
+    packages=['rouge'],
     classifiers=[
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: Apache-v2',

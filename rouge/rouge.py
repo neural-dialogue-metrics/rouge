@@ -23,7 +23,7 @@ __all__ = [
     "rouge_n_sentence_level",
     "rouge_l_sentence_level",
     "rouge_l_summary_level",
-    "rouge_n_summary_level"
+    "rouge_n_summary_level",
 ]
 
 

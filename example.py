@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+"""Examples."""
 from rouge.rouge import rouge_n_sentence_level
 from rouge.rouge import rouge_l_sentence_level
 from rouge.rouge import rouge_n_summary_level
