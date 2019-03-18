@@ -33,10 +33,12 @@ def make_rouge(**kwargs):
     kwargs.setdefault('favor', True)  # use alpha
     kwargs.setdefault('word_level', True)
     kwargs.setdefault('length_limit', False)
+    if 'p' not in kwargs or kwargs['p'] is None:
+        kwargs['p'] = 0.5
     return Pythonrouge(**kwargs)
 
 
-def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=0.5):
+def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=None):
     """
     Calculate ROUGE-N using pythonrouge.
     :param summary_sentence: a string.
@@ -56,7 +58,19 @@ def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=0.5):
     return _parse_output(prefix, score)
 
 
-def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=0.5):
+def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None):
+    rouge = make_rouge(
+        summary=[summary_sentences],
+        reference=[[reference_sentences]],
+        n_gram=n,
+        p=alpha
+    )
+    score = rouge.calc_score()
+    prefix = 'ROUGE-%d-' % n
+    return _parse_output(prefix, score)
+
+
+def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
     """
     Calculate sentence level
     :param summary_sentence:

@@ -16,7 +16,20 @@ class TestRougeL(unittest.TestCase):
         self.assertAlmostEqual(f_, f, places=5)
 
     def test_summary_level(self):
-        pass
+        for n in self.N_TO_TEST:
+            for ours_data, theirs_data in load_summary_pairs():
+                ours_score = rouge_l_summary_level(*ours_data, n=n)
+                theirs_score = _rouge_l_summary_level(*theirs_data, n=n)
+
+                for ours, theirs in zip(ours_score, theirs_score):
+                    self.assertAlmostEqual(ours, theirs, delta=1e-5, msg="""
+                                                     ours_data = %r
+                                                     theirs_data = %r
+
+                                                     ours_score = %r
+                                                     theirs_score = %r
+                                                     n = %r
+                                                     """ % (ours_data, theirs_data, ours_score, theirs_score, n))
 
     def test_sentence_level_(self):
         for ours_data, theirs_data in load_sentence_pairs():

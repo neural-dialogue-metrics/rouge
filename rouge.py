@@ -1,7 +1,7 @@
 import collections
 import itertools
 
-__all__ = ["rouge_n_sentence_level", "rouge_l_sentence_level", "rouge_l_summary_level"]
+__all__ = ["rouge_n_sentence_level", "rouge_l_sentence_level", "rouge_l_summary_level", "rouge_n_summary_level"]
 
 
 def num_ngrams(words, n):
@@ -88,6 +88,8 @@ def _f1_measure(numerator, r_denominator, p_denominator, alpha):
     :param alpha: the weighting factor.
     :return: 3-tuple of recall, precision and f1.
     """
+    if alpha is None:
+        alpha = 0.5
     recall = _divide_or_zero(numerator, r_denominator)
     precision = _divide_or_zero(numerator, p_denominator)
     f1 = _divide_or_zero(precision * recall, (1 - alpha) * precision + alpha * recall)
@@ -121,7 +123,7 @@ def _clipped_ngram_count(summary_ngrams, reference_ngrams):
     # return len(overlap)
 
 
-def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=0.5):
+def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=None):
     """
     Calculate ROUGE-N on already preprocessed sentences.
 
@@ -165,7 +167,7 @@ def _flatten_sentences(sentences):
     return list(itertools.chain.from_iterable(sentences))
 
 
-def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=0.5):
+def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None):
     """
     Calculate summary level ROUGE-N.
     The sentences are first flatten and then feed to rouge_n_sentence_level.
@@ -256,7 +258,7 @@ def _lcs_length(x, y):
     return table[n, m]
 
 
-def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=0.5):
+def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
     """
     Calculate sentence level ROUGE-L.
 
@@ -304,7 +306,7 @@ def _lcs_union_value(summary_sentences, reference_sentence):
     # return len(lcs_union)
 
 
-def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=0.5):
+def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
     """
     Calculate the summary level ROUGE-L.
     :param summary_sentences: a list of sentence, each sentence is a list of tokens.

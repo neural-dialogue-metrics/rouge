@@ -26,6 +26,16 @@ def load_sentence_pairs():
             yield ours, theirs
 
 
+def load_summary_pairs():
+    for raw_data in load_data().values():
+        summary_sentences = [clean(sentence) for sentence in raw_data[SUMMARIES]]
+        reference_sentences = [clean(sentence) for sentence in raw_data[REFERENCES]]
+        theirs = (summary_sentences, reference_sentences)
+        ours = ([sentence.split() for sentence in summary_sentences],
+                [sentence.split() for sentence in reference_sentences])
+        yield ours, theirs
+
+
 # One pair of data points.
 summary = 'gunman kill the police'.split()
 reference = 'the police killed the gunman'.split()
