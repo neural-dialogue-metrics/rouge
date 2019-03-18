@@ -23,7 +23,7 @@ class TestRougeL(unittest.TestCase):
                                                             theirs_score = %r
                                                             """ % (ours_score, theirs_score))
 
-    def test_sentence_level_(self):
+    def test_sentence_level(self):
         for ours_data, theirs_data in load_sentence_pairs():
             score = rouge_l_sentence_level(*ours_data)
             score_ = _rouge_l_sentence_level(*theirs_data)
@@ -35,19 +35,15 @@ class TestRougeL(unittest.TestCase):
                         """ % (ours_data, theirs_data))
 
     def test_summary_level(self):
-        """
-        FIXME:
-        :return:
-        """
         for ours_data, theirs_data in load_summary_pairs():
             ours_score = rouge_l_summary_level(*ours_data)
             theirs_score = _rouge_l_summary_level(*theirs_data)
 
             for ours, theirs in zip(ours_score, theirs_score):
                 self.assertAlmostEqual(ours, theirs, delta=1e-5, msg="""
-                                                     ours_data = %r
-                                                     theirs_data = %r
-
-                                                     ours_score = %r
-                                                     theirs_score = %r
-                                                     """ % (ours_data, theirs_data, ours_score, theirs_score))
+                         ours_data = %r
+                         theirs_data = %r
+    
+                         ours_score = %r
+                         theirs_score = %r
+                         """ % (ours_data, theirs_data, ours_score, theirs_score))
