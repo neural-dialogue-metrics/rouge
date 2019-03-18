@@ -37,6 +37,13 @@ print('ROUGE-2-R', recall)
 ```
 For more usage examples, please refer to `example.py`.
 
+# Install
+Currently not uploaded to PyPi...
+```bash
+git clone https://github.com/neural-dialogue-metrics/rouge.git
+python ./setup.py install
+```
+
 # Dependencies
 The code is *only* tested on `python==3.6.2` but it should work with higher version of Python.
 If you want to run the tests locally, you need to install [Pythonrouge](https://github.com/tagucci/pythonrouge.git), which is a wrapper on the original
@@ -54,7 +61,7 @@ Then go to the project root directory, run:
 # Run doctests.
 python -m doctest ./rouge/*.py -v
 
-# Run unittests. It will takes about 10 minutes or more.
+# Run unittests.
 python -m unittest -v
 ```
 Since the python wrapper is generally slow, the tests takes more than a few minutes to finish.
@@ -106,5 +113,7 @@ The API style closely follows that of `nltk.translate.bleu_score`.
 
 # References
 [1] ROUGE: A Package for Automatic Evaluation of Summaries.
+
 [2] ROUGE 2.0: Updated and Improved Measures for Evaluation of Summarization Tasks.
+
 [3] Automatic Evaluation of Machine Translation Quality Using Longest Common Subsequence and Skip-Bigram Statistics.
