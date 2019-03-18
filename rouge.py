@@ -120,20 +120,11 @@ def _clipped_ngram_count(summary_ngrams, reference_ngrams):
     """
     overlap = summary_ngrams & reference_ngrams
     return sum(overlap.values())
-    # return len(overlap)
 
 
 def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=None):
     """
     Calculate ROUGE-N on already preprocessed sentences.
-
-    >>> summary = 'gunman kill the police'.split()
-    >>> reference = 'the police killed the gunman'.split()
-
-    >>> rouge_n_sentence_level(summary, [reference], n=2)
-    (0.25, 0.3333333333333333, 0.28571428571428575)
-    >>> rouge_n_sentence_level(summary, [reference], n=1)
-    (0.6, 0.75, 0.6666666666666666)
 
     :param summary_sentence: a list of tokens.
     :param reference_sentence: a nested list of tokens.
@@ -145,7 +136,6 @@ def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=None):
     reference_ngrams = count_ngrams(reference_sentence, n)
     total_matches = _clipped_ngram_count(summary_ngrams, reference_ngrams)
 
-    # Hey! why are you normalizing your n-gram with len!!!
     recall_denominator = num_ngrams(reference_sentence, n)
     precision_denominator = num_ngrams(summary_sentence, n)
     return _f1_measure(total_matches, recall_denominator, precision_denominator, alpha)
@@ -229,7 +219,7 @@ def _lcs_sequence(x, y):
         if i == 0 or j == 0:
             return []
         elif x[i - 1] == y[j - 1]:
-            return _recon(i - 1, j - 1) + [x[i - 1]]
+            return _recon(i - 1, j - 1) + [i]
         elif table[i - 1, j] > table[i, j - 1]:
             return _recon(i - 1, j)
         else:
@@ -302,8 +292,7 @@ def _lcs_union_value(summary_sentences, reference_sentence):
         lcs_set = set(_lcs_sequence(sentence, reference_sentence))
         lcs_union |= lcs_set
     # Note this is only used in summary level lcs.
-    return sum(lcs_union.values())
-    # return len(lcs_union)
+    return len(lcs_union)
 
 
 def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):

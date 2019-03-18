@@ -38,20 +38,32 @@ def make_rouge(**kwargs):
     return Pythonrouge(**kwargs)
 
 
+def make_rouge_n(summary, reference, n_gram):
+    return make_rouge(summary=summary, reference=reference, n_gram=n_gram)
+
+
+def make_rouge_l(summary, reference):
+    return make_rouge(
+        summary=summary,
+        reference=reference,
+        ROUGE_L=True,
+        n_gram=-1,  # Suppress computation of ROUGE-N.
+    )
+
+
 def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=None):
     """
-    Calculate ROUGE-N using pythonrouge.
+    Calculate sentence level ROUGE-N using pythonrouge.
     :param summary_sentence: a string.
     :param reference_sentence: a string.
     :param n:
     :param alpha:
     :return:
     """
-    rouge = make_rouge(
+    rouge = make_rouge_n(
         summary=[[summary_sentence]],
         reference=[[[reference_sentence]]],
         n_gram=n,
-        p=alpha
     )
     score = rouge.calc_score()
     prefix = 'ROUGE-%d-' % n
@@ -59,11 +71,18 @@ def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=None):
 
 
 def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None):
-    rouge = make_rouge(
+    """
+    Calculate summary level ROUGE-N using wrapper.
+    :param summary_sentences:
+    :param reference_sentences:
+    :param n:
+    :param alpha:
+    :return:
+    """
+    rouge = make_rouge_n(
         summary=[summary_sentences],
         reference=[[reference_sentences]],
         n_gram=n,
-        p=alpha
     )
     score = rouge.calc_score()
     prefix = 'ROUGE-%d-' % n
@@ -72,18 +91,39 @@ def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None)
 
 def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
     """
-    Calculate sentence level
+    Calculate sentence level ROUGE-L using wrapper.
     :param summary_sentence:
     :param reference_sentence:
     :param alpha:
     :return:
     """
-    rouge = make_rouge(
+    rouge = make_rouge_l(
         summary=[[summary_sentence]],
         reference=[[[reference_sentence]]],
-        p=alpha,
-        ROUGE_L=True,
     )
     prefix = 'ROUGE-L-'
     score = rouge.calc_score()
     return _parse_output(prefix, score)
+
+
+def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
+    """
+    Calculate summary level ROUGE-L using wrapper.
+    :param summary_sentences:
+    :param reference_sentences:
+    :param alpha:
+    :return:
+    """
+    rouge = make_rouge_l(
+        summary=[summary_sentences],
+        reference=[[reference_sentences]],
+    )
+    prefix = 'ROUGE-L-'
+    score = rouge.calc_score()
+    print(_get_command(rouge))
+    return _parse_output(prefix, score)
+
+
+def _get_command(rouge):
+    cmd = rouge.set_command()
+    return ' '.join(cmd)
