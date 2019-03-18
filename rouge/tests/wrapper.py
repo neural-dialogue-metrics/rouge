@@ -1,3 +1,18 @@
+# Copyright 2019 Cong Feng. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ==============================================================================
+
 """
 Wrapper of Pythonrouge to provide similar interface of rouge.
 """
@@ -19,7 +34,7 @@ def _parse_output(prefix, score):
     return tuple(score[prefix + kind] for kind in _METRIC_KEYS)
 
 
-def make_rouge(**kwargs):
+def _make_rouge(**kwargs):
     """
     Create a Pythonrouge according to our settings.
     :param kwargs:
@@ -38,12 +53,25 @@ def make_rouge(**kwargs):
     return Pythonrouge(**kwargs)
 
 
-def make_rouge_n(summary, reference, n_gram):
-    return make_rouge(summary=summary, reference=reference, n_gram=n_gram)
+def _make_rouge_n(summary, reference, n_gram):
+    """
+    Create a Pythonrouge for ROUGE-N.
+    :param summary:
+    :param reference:
+    :param n_gram:
+    :return:
+    """
+    return _make_rouge(summary=summary, reference=reference, n_gram=n_gram)
 
 
-def make_rouge_l(summary, reference):
-    return make_rouge(
+def _make_rouge_l(summary, reference):
+    """
+    Create a Pythonrouge for ROUGE-L.
+    :param summary:
+    :param reference:
+    :return:
+    """
+    return _make_rouge(
         summary=summary,
         reference=reference,
         ROUGE_L=True,
@@ -60,7 +88,7 @@ def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=None):
     :param alpha:
     :return:
     """
-    rouge = make_rouge_n(
+    rouge = _make_rouge_n(
         summary=[[summary_sentence]],
         reference=[[[reference_sentence]]],
         n_gram=n,
@@ -79,7 +107,7 @@ def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None)
     :param alpha:
     :return:
     """
-    rouge = make_rouge_n(
+    rouge = _make_rouge_n(
         summary=[summary_sentences],
         reference=[[reference_sentences]],
         n_gram=n,
@@ -97,7 +125,7 @@ def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
     :param alpha:
     :return:
     """
-    rouge = make_rouge_l(
+    rouge = _make_rouge_l(
         summary=[[summary_sentence]],
         reference=[[[reference_sentence]]],
     )
@@ -114,7 +142,7 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
     :param alpha:
     :return:
     """
-    rouge = make_rouge_l(
+    rouge = _make_rouge_l(
         summary=[summary_sentences],
         reference=[[reference_sentences]],
     )
@@ -124,5 +152,10 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
 
 
 def _get_command(rouge):
+    """
+    Return the command to invoke the perl script from a Pythonrouge.
+    :param rouge:
+    :return:
+    """
     cmd = rouge.set_command()
     return ' '.join(cmd)
