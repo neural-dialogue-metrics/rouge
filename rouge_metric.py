@@ -61,7 +61,7 @@ def _compute_mean_score(metric_fn, summary, reference):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser("Compute average ROUGE-1 ROUGE-2 and ROUGE-L on sentence pairs")
     parser.add_argument("summary", help="a file of summaries, one sentence per line.")
     parser.add_argument("reference", help="a file of references, one sentence per line")
     parser.add_argument("-a", "--alpha", help="weight factor for the recall in the F1-measure", type=float)
