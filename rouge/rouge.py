@@ -19,6 +19,9 @@ Yet another Python implementation of ROUGE.
 import collections
 import itertools
 import math
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 __all__ = [
     "rouge_n_sentence_level",
@@ -507,7 +510,7 @@ def _wlcs_elements(x, y, weight=None):
                 consecutive_match[i, j] = k + 1
             else:
                 consecutive_match[i, j] = 0  # No match
-                if weighted_len[i - 1, j] > weighted_len[i, j - 1]:
+                if weighted_len[i - 1, j] >= weighted_len[i, j - 1]:
                     trace[i, j] = 'u'
                     weighted_len[i, j] = weighted_len[i - 1, j]
                 else:
@@ -563,13 +566,25 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     summary_unigrams = _flatten_and_count_ngrams(summary_sentences, 1)
     reference_unigrams = _flatten_and_count_ngrams(reference_sentences, 1)
 
+    # logging.info('count of 1gram: %f', sum(summary_unigrams.values()))
+
+    # logging.info('count of total words: %f', sum(len(sent) for sent in summary_sentences))
+    # logging.info('f(sum of len): %f', _weight_fn())
+
     r_denominator = sum(
         _weight_fn(len(sentence), weight=weight) for sentence in reference_sentences
     )
 
+    # I don't know why they put one more weight_fn here.
+    r_denominator = _weight_fn(r_denominator, weight)
+
+    # logging.info('model count %f', r_denominator)
+    # logging.info('f(model count) %f', _weight_fn(r_denominator, weight))
+
     p_denominator = sum(
         _weight_fn(len(sentence), weight=weight) for sentence in summary_sentences
     )
+    # logging.info('peer count %f', p_denominator)
 
     for reference in reference_sentences:
         hit_len = 0
@@ -592,6 +607,9 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     recall = _divide_and_normalize(total_wlcs_hits, r_denominator, weight)
     precision = _divide_and_normalize(total_wlcs_hits, p_denominator, weight)
     f1 = _compute_f1_measure(recall, precision, alpha)
+
+    logging.info('hit %f', total_wlcs_hits)
+
     return recall, precision, f1
 
 

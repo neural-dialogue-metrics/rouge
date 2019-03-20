@@ -40,14 +40,17 @@ class TestRougeW(unittest.TestCase):
 
     def test_sentence_level(self):
         for ours_data, theirs_data in load_sentence_pairs():
-            score = rouge_w_sentence_level(*ours_data)
-            score_ = _rouge_w_sentence_level(*theirs_data)
+            ours_score = rouge_w_sentence_level(*ours_data)
+            theirs_score = _rouge_w_sentence_level(*theirs_data)
 
-            for ours, theirs in zip(score, score_):
+            for ours, theirs in zip(ours_score, theirs_score):
                 self.assertAlmostEqual(ours, theirs, delta=1e-5, msg="""
                         ours_data = %r
                         theirs_data = %r
-                        """ % (ours_data, theirs_data))
+                        ours_score = %r
+                        theirs_score = %r
+                        """ % (ours_data, theirs_data,
+                               ours_score, theirs_score))
 
     def test_summary_level(self):
         for ours_data, theirs_data in load_summary_pairs():
