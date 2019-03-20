@@ -25,10 +25,16 @@ __all__ = [
     "rouge_l_sentence_level",
     "rouge_l_summary_level",
     "rouge_n_summary_level",
+    "rouge_w_sentence_level",
+    "rouge_w_summary_level",
 ]
 
 DEFAULT_WEIGHT_FACTOR = 1.2
 
+
+###############################
+#           ROUGE-N
+###############################
 
 def _num_ngrams(words, n):
     """
@@ -210,6 +216,10 @@ def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None)
     return rouge_n_sentence_level(summary_sentences, reference_sentences, n, alpha)
 
 
+###############################
+#           ROUGE-L
+###############################
+
 def _lcs_length(x, y):
     """
     Compute the length of the Longest Common Subsequence between sequences x
@@ -268,6 +278,34 @@ def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
     return _f1_measure(lcs_length, r_denominator, p_denominator, alpha)
 
 
+def _compute_lcs_elements(trace, x, y):
+    """
+    Compute the elements of a LCS given a pre-computed trace table.
+    In this table, the key is (i, j) coordinate drawn from x and y, and the value is:
+
+    - 'd': goes diagonal.
+    - 'u': goes up.
+    - 'l': goes left.
+
+    :param trace: dict. A trace table.
+    :param x:
+    :param y:
+    :return:
+    """
+    i, j = len(x), len(y)
+    elements = set()
+    while i != 0 and j != 0:
+        if trace[i, j] == 'd':
+            i -= 1
+            j -= 1
+            elements.add((i, j))
+        elif trace[i, j] == 'u':
+            i -= 1
+        else:
+            j -= 1
+    return elements
+
+
 def _lcs_elements(x, y):
     """
     Compute the index pairs that make up a LCS of x and y.
@@ -323,20 +361,8 @@ def _lcs_elements(x, y):
                     trace_table[i, j] = 'l'  # go left.
         return trace_table
 
-    i, j = len(x), len(y)
-    elements = set()
-
     table = _compute_lcs_table()
-    while i != 0 and j != 0:
-        if table[i, j] == 'd':
-            i -= 1
-            j -= 1
-            elements.add((i, j))
-        elif table[i, j] == 'u':
-            i -= 1
-        else:
-            j -= 1
-    return elements
+    return _compute_lcs_elements(table, x, y)
 
 
 def _make_lcs_union(summary_sentences, reference_sentence):
@@ -402,7 +428,7 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
     summary_unigrams = _flatten_and_count_ngrams(summary_sentences, 1)
     reference_unigrams = _flatten_and_count_ngrams(reference_sentences, 1)
 
-    total_lcs_words = 0
+    total_lcs_hits = 0
     for reference in reference_sentences:
         lcs_union = _make_lcs_union(summary_sentences, reference)
         for word in lcs_union:
@@ -411,20 +437,36 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
                     and summary_unigrams[unigram] > 0 and reference_unigrams[unigram] > 0):
                 summary_unigrams[unigram] -= 1
                 reference_unigrams[unigram] -= 1
-                total_lcs_words += 1
+                total_lcs_hits += 1
 
     r_denominator = sum(len(sentence) for sentence in reference_sentences)
     p_denominator = sum(len(sentence) for sentence in summary_sentences)
-    return _f1_measure(total_lcs_words, r_denominator, p_denominator, alpha)
+    return _f1_measure(total_lcs_hits, r_denominator, p_denominator, alpha)
 
+
+###############################
+#           ROUGE-W
+###############################
 
 def _weight_fn(x, weight=None, inverse=False):
     """
+    Implement the polynomial weight function described in the paper.
 
-    :param x:
-    :param weight:
-    :param inverse:
-    :return:
+    Y = X^weight and
+    Y = X^(1 / weight) as the inverse.
+
+    >>> _weight_fn(2)
+    2.2973967099940698
+    >>> _weight_fn(2, weight=2)
+    4.0
+    >>> _weight_fn(2, weight=2, inverse=True)
+    1.4142135623730951
+
+    :param x: Union[int, float].
+    :param weight: float. Must be greater than 1.0. Default is 1.2.
+    :param inverse: bool. If true, the inverse is computed
+    :return: float.
+    :raise ValueError: if weight is not greater than 1.0.
     """
     if weight is None:
         weight = DEFAULT_WEIGHT_FACTOR
@@ -435,58 +477,78 @@ def _weight_fn(x, weight=None, inverse=False):
     return math.pow(x, weight)
 
 
-def _lcs_length_with_weight(x, y, weight=None):
+def _wlcs_elements(x, y, weight=None):
     """
     Compute the weighted LCS length.
+
+    The weighted LCS length rewards consecutive LCS sequence by its length.
+    The weight function is so designed that longer consecutive ones get higher score.
+
     :param x: a sequence.
     :param y: a sequence.
-    :param weight: the weight factor passed to the weight function.
+    :param weight: float, the weight factor passed to the weight function.
     :return: float.
     """
     weighted_len = {}
     consecutive_match = {}
+    trace = {}
     m, n = len(x), len(y)
+
     for i in range(m + 1):
         for j in range(n + 1):
             if i == 0 or j == 0:  # Corner case.
                 weighted_len[i, j] = 0
                 consecutive_match[i, j] = 0
             elif x[i - 1] == y[j - 1]:
+                trace[i, j] = 'd'
                 k = consecutive_match[i - 1, j - 1]
                 update = _weight_fn(k + 1, weight) - _weight_fn(k, weight)
                 weighted_len[i, j] = weighted_len[i - 1, j - 1] + update
                 consecutive_match[i, j] = k + 1
             else:
-                weighted_len[i, j] = max(weighted_len[i - 1, j], weighted_len[i, j - 1])
-                consecutive_match[i, j] = 0
-    return weighted_len[m, n]
+                consecutive_match[i, j] = 0  # No match
+                if weighted_len[i - 1, j] > weighted_len[i, j - 1]:
+                    trace[i, j] = 'u'
+                    weighted_len[i, j] = weighted_len[i - 1, j]
+                else:
+                    trace[i, j] = 'l'
+                    weighted_len[i, j] = weighted_len[i, j - 1]
+
+    return _compute_lcs_elements(trace, x, y)
 
 
-def rouge_w_sentence_level(summary_sentence, reference_sentence, weight=None, alpha=None):
+def _make_wlcs_union(summary_sentences, reference_sentence):
     """
+    Like _make_lcs_union() but use _wlcs_elements() to compute elements for
+    each summary-reference sentence pair. The final result is a sorted list of word indices
+    of the reference sentence.
 
-    :param summary_sentence:
+    :param summary_sentences:
     :param reference_sentence:
-    :param weight:
-    :param alpha:
-    :return:
+    :return: list.
     """
-    def compute(n, d):
-        return _weight_fn(
-            _divide_or_zero(n, _weight_fn(d, weight=weight)),
-            inverse=True,
-            weight=weight
-        )
+    lcs_union = set()
+    for sentence in summary_sentences:
+        lcs = _wlcs_elements(sentence, reference_sentence)
+        lcs_union = lcs_union.union(ref_idx for _, ref_idx in lcs)
+    return sorted(lcs_union)
 
-    numerator = _lcs_length_with_weight(summary_sentence, reference_sentence, weight)
-    recall = compute(numerator, len(reference_sentence))
-    precision = compute(numerator, len(summary_sentence))
-    f1 = _compute_f1_measure(recall, precision, alpha)
-    return recall, precision, f1
+
+def _divide_and_normalize(n, d, weight):
+    """
+    Divide n by d and normalize the result with the inverse weight function.
+    Effectively compute: F^-1 (n / d).
+
+    :param n: float. numerator.
+    :param d: float. denominator.
+    :return: float.
+    """
+    return _weight_fn(_divide_or_zero(n, d), weight=weight, inverse=True)
 
 
 def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, alpha=None):
     """
+    Compute the summary level ROUGE-W.
 
     :param summary_sentences:
     :param reference_sentences:
@@ -494,4 +556,54 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     :param alpha:
     :return:
     """
-    pass
+
+    total_wlcs_hits = 0
+
+    # unigrams clippers to ensure the score does not exceed ROUGE-1.
+    summary_unigrams = _flatten_and_count_ngrams(summary_sentences, 1)
+    reference_unigrams = _flatten_and_count_ngrams(reference_sentences, 1)
+
+    r_denominator = sum(
+        _weight_fn(len(sentence), weight=weight) for sentence in reference_sentences
+    )
+
+    p_denominator = sum(
+        _weight_fn(len(sentence), weight=weight) for sentence in summary_sentences
+    )
+
+    for reference in reference_sentences:
+        hit_len = 0
+        lcs_union = _make_wlcs_union(summary_sentences, reference)
+        for word in lcs_union:
+            unigram = (reference[word],)
+            if (unigram in summary_unigrams
+                    and unigram in reference_unigrams
+                    and summary_unigrams[unigram] > 0
+                    and reference_unigrams[unigram] > 0):
+                hit_len += 1
+                # If this is the last word of the sentence
+                # or the next word is not part of this consecutive lcs, reset the hit-len.
+                if word == len(reference) - 1 or reference[word + 1] not in lcs_union:
+                    total_wlcs_hits += _weight_fn(hit_len, weight=weight)
+                    hit_len = 0
+                summary_unigrams[unigram] -= 1
+                reference_unigrams[unigram] -= 1
+
+    recall = _divide_and_normalize(total_wlcs_hits, r_denominator, weight)
+    precision = _divide_and_normalize(total_wlcs_hits, p_denominator, weight)
+    f1 = _compute_f1_measure(recall, precision, alpha)
+    return recall, precision, f1
+
+
+def rouge_w_sentence_level(summary_sentence, reference_sentence, weight=None, alpha=None):
+    """
+    Compute the sentence level ROUGE-W.
+    This is effectively a weighted version of ROUGE-L.
+
+    :param summary_sentence: a sentence produced by the system.
+    :param reference_sentence: a sentence as ground truth.
+    :param weight: float, the weight factor passed to the weight function.
+    :param alpha: weight on the recall (default 0.5).
+    :return: a 3-tuple, recall, precision and f1 measure.
+    """
+    return rouge_w_summary_level([summary_sentence], [reference_sentence], weight, alpha)

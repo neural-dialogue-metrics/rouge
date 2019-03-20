@@ -17,11 +17,14 @@
 Wrapper of Pythonrouge to provide similar interface of rouge.
 """
 from pythonrouge import Pythonrouge
+from rouge.rouge import DEFAULT_WEIGHT_FACTOR
 
 _METRIC_KEYS = (
     'R', 'P', 'F'
 )
 
+
+# Clean this up when we have our own wrapper instead of wrapping a wrapper.
 
 def _parse_output(prefix, score):
     """
@@ -40,16 +43,32 @@ def _make_rouge(**kwargs):
     :param kwargs:
     :return:
     """
+    # Use Python data as input.
     kwargs.setdefault('summary_file_exist', False)
-    kwargs.setdefault('resampling', False)
+
+    # Disable all preprocessing and postprocessing.
+    # don't remove stopwords.
     kwargs.setdefault('stopwords', False)
-    kwargs.setdefault('ROUGE_SU4', False)
+    # don't do stemming.
     kwargs.setdefault('stemming', False)
-    kwargs.setdefault('favor', True)  # use alpha
+    # don't do bootstrap resampling
+    kwargs.setdefault('resampling', False)
+    # don't compute confidence interval.
+    kwargs.setdefault('cf', False)
+
+    # Disable all metrics by default.
+    kwargs.setdefault('n_gram', -1)  # disable ROUGE-N
+    kwargs.setdefault('ROUGE_L', False)
+    kwargs.setdefault('ROUGE_SU4', False)
+    kwargs.setdefault('ROUGE_W', False)
+
+    # Use default alpha.
+    kwargs.setdefault('favor', False)
+    # Evaluate based on words instead of bytes.
     kwargs.setdefault('word_level', True)
+    # No bytes limit.
     kwargs.setdefault('length_limit', False)
-    if 'p' not in kwargs or kwargs['p'] is None:
-        kwargs['p'] = 0.5
+
     return Pythonrouge(**kwargs)
 
 
@@ -61,7 +80,11 @@ def _make_rouge_n(summary, reference, n_gram):
     :param n_gram:
     :return:
     """
-    return _make_rouge(summary=summary, reference=reference, n_gram=n_gram)
+    return _make_rouge(
+        summary=summary,
+        reference=reference,
+        n_gram=n_gram
+    )
 
 
 def _make_rouge_l(summary, reference):
@@ -75,7 +98,6 @@ def _make_rouge_l(summary, reference):
         summary=summary,
         reference=reference,
         ROUGE_L=True,
-        n_gram=-1,  # Suppress computation of ROUGE-N.
     )
 
 
@@ -159,3 +181,32 @@ def _get_command(rouge):
     """
     cmd = rouge.set_command()
     return ' '.join(cmd)
+
+
+def _make_rouge_w(summary, reference):
+    # Use default weight.
+    return _make_rouge(
+        summary=summary,
+        reference=reference,
+        ROUGE_W=True,
+    )
+
+
+def rouge_w_sentence_level(summary_sentence, reference_sentence):
+    rouge = _make_rouge_w(
+        summary=[[summary_sentence]],
+        reference=[[[reference_sentence]]],
+    )
+    prefix = 'ROUGE-W-1.2-'
+    score = rouge.calc_score()
+    return _parse_output(prefix, score)
+
+
+def rouge_w_summary_level(summary_sentences, reference_sentences):
+    rouge = _make_rouge_w(
+        summary=[summary_sentences],
+        reference=[[reference_sentences]],
+    )
+    prefix = 'ROUGE-W-1.2-'
+    score = rouge.calc_score()
+    return _parse_output(prefix, score)
