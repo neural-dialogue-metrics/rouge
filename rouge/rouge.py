@@ -18,6 +18,7 @@ Yet another Python implementation of ROUGE.
 
 import collections
 import itertools
+import math
 
 __all__ = [
     "rouge_n_sentence_level",
@@ -25,6 +26,8 @@ __all__ = [
     "rouge_l_summary_level",
     "rouge_n_summary_level",
 ]
+
+DEFAULT_WEIGHT_FACTOR = 1.2
 
 
 def _num_ngrams(words, n):
@@ -95,7 +98,15 @@ def _divide_or_zero(numerator, denominator):
     return numerator / denominator
 
 
-def _f1_measure(numerator, r_denominator, p_denominator, alpha):
+def _compute_f1_measure(recall, precision, alpha=None):
+    if alpha is None:
+        alpha = 0.5
+    if not 0.0 <= alpha <= 1.0:
+        raise ValueError("alpha must be between [0, 1]")
+    return _divide_or_zero(precision * recall, (1 - alpha) * precision + alpha * recall)
+
+
+def _f1_measure(numerator, r_denominator, p_denominator, alpha=None):
     """
     Compute a weighted F-measure.
 
@@ -117,13 +128,9 @@ def _f1_measure(numerator, r_denominator, p_denominator, alpha):
     :return: 3-tuple of recall, precision and f1.
     :raise ValueError: If alpha is not between [0, 1].
     """
-    if alpha is None:
-        alpha = 0.5
-    if not 0.0 <= alpha <= 1.0:
-        raise ValueError("alpha must be between [0, 1]")
     recall = _divide_or_zero(numerator, r_denominator)
     precision = _divide_or_zero(numerator, p_denominator)
-    f1 = _divide_or_zero(precision * recall, (1 - alpha) * precision + alpha * recall)
+    f1 = _compute_f1_measure(recall, precision, alpha)
     return recall, precision, f1
 
 
@@ -409,3 +416,82 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
     r_denominator = sum(len(sentence) for sentence in reference_sentences)
     p_denominator = sum(len(sentence) for sentence in summary_sentences)
     return _f1_measure(total_lcs_words, r_denominator, p_denominator, alpha)
+
+
+def _weight_fn(x, weight=None, inverse=False):
+    """
+
+    :param x:
+    :param weight:
+    :param inverse:
+    :return:
+    """
+    if weight is None:
+        weight = DEFAULT_WEIGHT_FACTOR
+    if not weight > 1.0:
+        raise ValueError('weight must be > 1.0')
+    if inverse:
+        weight = 1 / weight
+    return math.pow(x, weight)
+
+
+def _lcs_length_with_weight(x, y, weight=None):
+    """
+    Compute the weighted LCS length.
+    :param x: a sequence.
+    :param y: a sequence.
+    :param weight: the weight factor passed to the weight function.
+    :return: float.
+    """
+    weighted_len = {}
+    consecutive_match = {}
+    m, n = len(x), len(y)
+    for i in range(m + 1):
+        for j in range(n + 1):
+            if i == 0 or j == 0:  # Corner case.
+                weighted_len[i, j] = 0
+                consecutive_match[i, j] = 0
+            elif x[i - 1] == y[j - 1]:
+                k = consecutive_match[i - 1, j - 1]
+                update = _weight_fn(k + 1, weight) - _weight_fn(k, weight)
+                weighted_len[i, j] = weighted_len[i - 1, j - 1] + update
+                consecutive_match[i, j] = k + 1
+            else:
+                weighted_len[i, j] = max(weighted_len[i - 1, j], weighted_len[i, j - 1])
+                consecutive_match[i, j] = 0
+    return weighted_len[m, n]
+
+
+def rouge_w_sentence_level(summary_sentence, reference_sentence, weight=None, alpha=None):
+    """
+
+    :param summary_sentence:
+    :param reference_sentence:
+    :param weight:
+    :param alpha:
+    :return:
+    """
+    def compute(n, d):
+        return _weight_fn(
+            _divide_or_zero(n, _weight_fn(d, weight=weight)),
+            inverse=True,
+            weight=weight
+        )
+
+    numerator = _lcs_length_with_weight(summary_sentence, reference_sentence, weight)
+    recall = compute(numerator, len(reference_sentence))
+    precision = compute(numerator, len(summary_sentence))
+    f1 = _compute_f1_measure(recall, precision, alpha)
+    return recall, precision, f1
+
+
+def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, alpha=None):
+    """
+
+    :param summary_sentences:
+    :param reference_sentences:
+    :param weight:
+    :param alpha:
+    :return:
+    """
+    pass
