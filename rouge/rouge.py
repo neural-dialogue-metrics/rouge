@@ -324,10 +324,12 @@ def _make_lcs_union(summary_sentences, reference_sentence):
     """
     lcs_union = set()
     for sentence in summary_sentences:
-        lcs = _lcs_sequence(sentence, reference_sentence)
         # get the indices of lcs from reference_sentence.
-        lcs_set = set(ref_idx for _, _, ref_idx in lcs)
-        lcs_union |= lcs_set
+        lcs = _lcs_sequence(sentence, reference_sentence)
+        # set.union() takes an iterable. And ref_idx in lcs is non-duplicate.
+        # So we do an optimization here to save a temp set and use union().
+        # See https://docs.python.org/3.7/library/stdtypes.html#frozenset.intersection
+        lcs_union = lcs_union.union(ref_idx for _, _, ref_idx in lcs)
     return lcs_union
 
 
