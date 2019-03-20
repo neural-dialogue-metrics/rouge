@@ -229,7 +229,7 @@ def _compute_lcs_table(x, y):
 
 def _lcs_length(x, y):
     """
-    Returns the length of the Longest Common Subsequence between sequences x
+    Compute the length of the Longest Common Subsequence between sequences x
     and y.
     Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence
 
@@ -260,6 +260,92 @@ def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
     r_denominator = len(reference_sentence)
     p_denominator = len(summary_sentence)
     return _f1_measure(lcs_length, r_denominator, p_denominator, alpha)
+
+
+def _compute_lcs_tables(x, y):
+    """
+    Compute the length table and trace table for the LCS problem of x and y.
+    From the length table one can get the len of LCS.
+    From the trace table one can get the actual sequence and the indices of each element
+    from both x and y.
+
+    The function is so factored that we don't need to compute the elements of a LCS when
+    we only need its length. In `rouge_l_sentence_level`, only the len is needed since we
+    don't perform any union operation. In `rouge_l_summary_level`, the elements are needed
+    and more computation is spent on it.
+
+    :param x: a sequence.
+    :param y: a sequence.
+    :return len_table, trace_table.
+    """
+    n, m = len(x), len(y)
+    len_table = {}
+    trace_table = {}
+    for i in range(n + 1):
+        for j in range(m + 1):
+            if i == 0 or j == 0:
+                # Initialize the tables are we do the loop.
+                # This saves us dedicated init code at the cost of some performance.
+                len_table[i, j] = 0
+            elif x[i - 1] == y[j - 1]:
+                len_table[i, j] = len_table[i - 1, j - 1] + 1
+                trace_table[i, j] = 'd'  # go diagonal.
+            elif len_table[i - 1, j] >= len_table[i, j - 1]:
+                len_table[i, j] = len_table[i - 1, j]
+                trace_table[i, j] = 'u'  # go up.
+            else:
+                len_table[i, j] = len_table[i, j - 1]
+                trace_table[i, j] = 'l'  # go down.
+    return len_table, trace_table
+
+
+def _lcs_elements(x, y):
+    """
+    Compute the index pairs that make up a LCS of x and y.
+    Return a set of 2-tuple, t. t[0] and t[1] are indices drawn from x, y respectively.
+    The actual sequence can be constructed from this set, given all the indices to the value
+    known.
+
+    >>> _lcs_elements('ab', 'bc')
+    {(1, 0)}
+    >>> _lcs_elements('a', 'd')
+    set()
+
+    :param x: a sequence.
+    :param y: a sequence.
+    :return: a set.
+    """
+    elements = set()
+    i, j = len(x), len(y)
+    _, trace_table = _compute_lcs_tables(x, y)
+    while i != 0 and j != 0:
+        if trace_table[i, j] == 'd':
+            i -= 1
+            j -= 1
+            elements.add((i, j))
+        elif trace_table[i, j] == 'u':
+            i -= 1
+        else:
+            # go left
+            j -= 1
+    return elements
+
+
+def _lcs_length_(x, y):
+    """
+    Compute the length of LCS of x and y.
+
+    >>> _lcs_length('ab', 'bc')
+    1
+    >>> _lcs_length('a', 'd')
+    0
+
+    :param x: a sequence.
+    :param y: a sequence.
+    :return: the length of LCS of x and y.
+    """
+    len_table, _ = _compute_lcs_tables(x, y)
+    return len_table[len(x), len(y)]
 
 
 def _lcs_sequence(x, y):
