@@ -203,30 +203,6 @@ def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None)
     return rouge_n_sentence_level(summary_sentences, reference_sentences, n, alpha)
 
 
-def _compute_lcs_table(x, y):
-    """
-    Computes the length of the longest common subsequence (lcs) between two
-    strings. The implementation below uses a DP programming algorithm and runs
-    in O(nm) time where n = len(x) and m = len(y).
-    Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence
-
-    :param x: collection of words
-    :param y: collection of words
-    :return Table of dictionary of coord.
-    """
-    n, m = len(x), len(y)
-    table = dict()
-    for i in range(n + 1):
-        for j in range(m + 1):
-            if i == 0 or j == 0:
-                table[i, j] = 0
-            elif x[i - 1] == y[j - 1]:
-                table[i, j] = table[i - 1, j - 1] + 1
-            else:
-                table[i, j] = max(table[i - 1, j], table[i, j - 1])
-    return table
-
-
 def _lcs_length(x, y):
     """
     Compute the length of the Longest Common Subsequence between sequences x
@@ -242,8 +218,31 @@ def _lcs_length(x, y):
     :param y: sequence of words
     :return: Length of LCS between x and y
     """
-    table = _compute_lcs_table(x, y)
     n, m = len(x), len(y)
+
+    def _compute_lcs_table():
+        """
+        Computes the length of the longest common subsequence (lcs) between two
+        strings. The implementation below uses a DP programming algorithm and runs
+        in O(nm) time where n = len(x) and m = len(y).
+        Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence
+
+        :param x: collection of words
+        :param y: collection of words
+        :return Table of dictionary of coord.
+        """
+        len_table = {}
+        for i in range(n + 1):
+            for j in range(m + 1):
+                if i == 0 or j == 0:
+                    len_table[i, j] = 0
+                elif x[i - 1] == y[j - 1]:
+                    len_table[i, j] = len_table[i - 1, j - 1] + 1
+                else:
+                    len_table[i, j] = max(len_table[i - 1, j], len_table[i, j - 1])
+        return len_table
+
+    table = _compute_lcs_table()
     return table[n, m]
 
 
@@ -262,43 +261,6 @@ def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
     return _f1_measure(lcs_length, r_denominator, p_denominator, alpha)
 
 
-def _compute_lcs_tables(x, y):
-    """
-    Compute the length table and trace table for the LCS problem of x and y.
-    From the length table one can get the len of LCS.
-    From the trace table one can get the actual sequence and the indices of each element
-    from both x and y.
-
-    The function is so factored that we don't need to compute the elements of a LCS when
-    we only need its length. In `rouge_l_sentence_level`, only the len is needed since we
-    don't perform any union operation. In `rouge_l_summary_level`, the elements are needed
-    and more computation is spent on it.
-
-    :param x: a sequence.
-    :param y: a sequence.
-    :return len_table, trace_table.
-    """
-    n, m = len(x), len(y)
-    len_table = {}
-    trace_table = {}
-    for i in range(n + 1):
-        for j in range(m + 1):
-            if i == 0 or j == 0:
-                # Initialize the tables are we do the loop.
-                # This saves us dedicated init code at the cost of some performance.
-                len_table[i, j] = 0
-            elif x[i - 1] == y[j - 1]:
-                len_table[i, j] = len_table[i - 1, j - 1] + 1
-                trace_table[i, j] = 'd'  # go diagonal.
-            elif len_table[i - 1, j] >= len_table[i, j - 1]:
-                len_table[i, j] = len_table[i - 1, j]
-                trace_table[i, j] = 'u'  # go up.
-            else:
-                len_table[i, j] = len_table[i, j - 1]
-                trace_table[i, j] = 'l'  # go down.
-    return len_table, trace_table
-
-
 def _lcs_elements(x, y):
     """
     Compute the index pairs that make up a LCS of x and y.
@@ -310,73 +272,64 @@ def _lcs_elements(x, y):
     {(1, 0)}
     >>> _lcs_elements('a', 'd')
     set()
+    >>> _lcs_elements('abc', 'abc')
+    {(0, 0), (1, 1), (2, 2)}
 
     :param x: a sequence.
     :param y: a sequence.
     :return: a set.
     """
-    elements = set()
+
+    def _compute_lcs_table():
+        """
+        Compute the length table and trace table for the LCS problem of x and y.
+        From the length table one can get the len of LCS.
+        From the trace table one can get the actual sequence and the indices of each element
+        from both x and y.
+
+        The function is so factored that we don't need to compute the elements of a LCS when
+        we only need its length. In `rouge_l_sentence_level`, only the len is needed since we
+        don't perform any union operation. In `rouge_l_summary_level`, the elements are needed
+        and more computation is spent on it.
+
+        :param x: a sequence.
+        :param y: a sequence.
+        :return len_table, trace_table.
+        """
+        n, m = len(x), len(y)
+        len_table = {}
+        trace_table = {}
+        for i in range(n + 1):
+            for j in range(m + 1):
+                if i == 0 or j == 0:
+                    # Initialize the tables are we do the loop.
+                    # This saves us dedicated init code at the cost of some performance.
+                    len_table[i, j] = 0
+                elif x[i - 1] == y[j - 1]:
+                    len_table[i, j] = len_table[i - 1, j - 1] + 1
+                    trace_table[i, j] = 'd'  # go diagonal.
+                elif len_table[i - 1, j] > len_table[i, j - 1]:
+                    len_table[i, j] = len_table[i - 1, j]
+                    trace_table[i, j] = 'u'  # go up.
+                else:
+                    len_table[i, j] = len_table[i, j - 1]
+                    trace_table[i, j] = 'l'  # go left.
+        return trace_table
+
     i, j = len(x), len(y)
-    _, trace_table = _compute_lcs_tables(x, y)
+    elements = set()
+
+    table = _compute_lcs_table()
     while i != 0 and j != 0:
-        if trace_table[i, j] == 'd':
+        if table[i, j] == 'd':
             i -= 1
             j -= 1
             elements.add((i, j))
-        elif trace_table[i, j] == 'u':
+        elif table[i, j] == 'u':
             i -= 1
         else:
-            # go left
             j -= 1
     return elements
-
-
-def _lcs_length_(x, y):
-    """
-    Compute the length of LCS of x and y.
-
-    >>> _lcs_length('ab', 'bc')
-    1
-    >>> _lcs_length('a', 'd')
-    0
-
-    :param x: a sequence.
-    :param y: a sequence.
-    :return: the length of LCS of x and y.
-    """
-    len_table, _ = _compute_lcs_tables(x, y)
-    return len_table[len(x), len(y)]
-
-
-def _lcs_sequence(x, y):
-    """
-    Returns the Longest Subsequence between x and y.
-    Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence
-
-    >>> _lcs_sequence('abc', 'bcd')
-    [('b', 1, 0), ('c', 2, 1)]
-    >>> _lcs_sequence('', '')
-    []
-
-    :param x: sequence of words
-    :param y: sequence of words
-    :return: a list of 3-tuple: the element, its index in x, its index in y.
-    """
-    m, n = len(x), len(y)
-    table = _compute_lcs_table(x, y)
-
-    def _recon(i, j):
-        """private recon calculation"""
-        if i == 0 or j == 0:
-            return []
-        elif x[i - 1] == y[j - 1]:
-            return _recon(i - 1, j - 1) + [(x[i - 1], i - 1, j - 1)]
-        elif table[i - 1, j] > table[i, j - 1]:
-            return _recon(i - 1, j)
-        else:
-            return _recon(i, j - 1)
-
-    return _recon(m, n)
 
 
 def _make_lcs_union(summary_sentences, reference_sentence):
@@ -410,12 +363,8 @@ def _make_lcs_union(summary_sentences, reference_sentence):
     """
     lcs_union = set()
     for sentence in summary_sentences:
-        # get the indices of lcs from reference_sentence.
-        lcs = _lcs_sequence(sentence, reference_sentence)
-        # set.union() takes an iterable. And ref_idx in lcs is non-duplicate.
-        # So we do an optimization here to save a temp set and use union().
-        # See https://docs.python.org/3.7/library/stdtypes.html#frozenset.intersection
-        lcs_union = lcs_union.union(ref_idx for _, _, ref_idx in lcs)
+        lcs = _lcs_elements(sentence, reference_sentence)
+        lcs_union = lcs_union.union(ref_idx for _, ref_idx in lcs)
     return lcs_union
 
 
