@@ -16,8 +16,10 @@
 """
 Wrapper of Pythonrouge to provide similar interface of rouge.
 """
+import logging
 from pythonrouge import Pythonrouge
-from rouge.rouge import DEFAULT_WEIGHT_FACTOR
+
+logging.basicConfig(level=logging.INFO)
 
 _METRIC_KEYS = (
     'R', 'P', 'F'
@@ -199,7 +201,7 @@ def rouge_w_sentence_level(summary_sentence, reference_sentence):
     )
     prefix = 'ROUGE-W-1.2-'
     score = rouge.calc_score()
-    print(_get_command(rouge))
+    # logging.info(_get_command(rouge))
     return _parse_output(prefix, score)
 
 

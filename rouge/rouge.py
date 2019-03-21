@@ -510,7 +510,7 @@ def _wlcs_elements(x, y, weight=None):
                 consecutive_match[i, j] = k + 1
             else:
                 consecutive_match[i, j] = 0  # No match
-                if weighted_len[i - 1, j] >= weighted_len[i, j - 1]:
+                if weighted_len[i - 1, j] > weighted_len[i, j - 1]:
                     trace[i, j] = 'u'
                     weighted_len[i, j] = weighted_len[i - 1, j]
                 else:
@@ -598,7 +598,7 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
                 hit_len += 1
                 # If this is the last word of the sentence
                 # or the next word is not part of this consecutive lcs, reset the hit-len.
-                if word == len(reference) - 1 or reference[word + 1] not in lcs_union:
+                if word == len(reference) - 1 or word + 1 not in lcs_union:
                     total_wlcs_hits += _weight_fn(hit_len, weight=weight)
                     hit_len = 0
                 summary_unigrams[unigram] -= 1
@@ -608,7 +608,7 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     precision = _divide_and_normalize(total_wlcs_hits, p_denominator, weight)
     f1 = _compute_f1_measure(recall, precision, alpha)
 
-    logging.info('hit %f', total_wlcs_hits)
+    # logging.info('hit %f', total_wlcs_hits)
 
     return recall, precision, f1
 
