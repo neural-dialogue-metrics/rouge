@@ -17,9 +17,10 @@ from rouge.rouge import rouge_n_sentence_level
 from rouge.rouge import rouge_l_sentence_level
 from rouge.rouge import rouge_n_summary_level
 from rouge.rouge import rouge_l_summary_level
+from rouge.rouge import rouge_w_sentence_level
+from rouge.rouge import rouge_w_summary_level
 
 if __name__ == '__main__':
-
     # The use of sentence level rouges.
     reference_sentence = 'the police killed the gunman'.split()
     summary_sentence = 'the gunman police killed'.split()
@@ -33,6 +34,9 @@ if __name__ == '__main__':
 
     _, _, rouge_l = rouge_l_sentence_level(summary_sentence, reference_sentence)
     print('ROUGE-L: %f' % rouge_l)
+
+    _, _, rouge_w = rouge_w_sentence_level(summary_sentence, reference_sentence)
+    print('ROUGE-W: %f' % rouge_w)
 
     # The use of summary level rouges.
     # Each summary is a list of sentences.
@@ -57,3 +61,6 @@ if __name__ == '__main__':
 
     _, _, rouge_l = rouge_l_summary_level(summary_sentences, reference_sentences)
     print('ROUGE-L: %f' % rouge_l)
+
+    _, _, rouge_w = rouge_w_summary_level(summary_sentences, reference_sentences)
+    print('ROUGE-W: %f' % rouge_w)

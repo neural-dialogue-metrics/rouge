@@ -2,7 +2,7 @@
 This is a pure Python implementation of the ROUGE metrics family in the automatic summarization fields
 following the paper *ROUGE: A Package for Automatic Evaluation of Summaries Chin-Yew Lin et al.*.
 It is an attempt to implement these metrics correctly and elegantly in total Python. It provides the following features:
-- ROUGE-N and ROUGE-L are currently supported.
+- ROUGE-N, ROUGE-L and ROUGE-W are currently supported.
 - Flexible input. For each metrics supported, a sentence level and a summary level variants are provided, which means you
 can use them in a machine translation context with sentence pairs.
 - Correctness. All the claimed implemented metrics are tested against a non-trivial amount of data, using the plain old perl script

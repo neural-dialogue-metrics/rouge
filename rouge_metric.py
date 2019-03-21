@@ -23,6 +23,7 @@ import argparse
 
 from rouge.rouge import rouge_n_sentence_level
 from rouge.rouge import rouge_l_sentence_level
+from rouge.rouge import rouge_w_sentence_level
 
 
 def _break_into_words(line):
@@ -65,6 +66,7 @@ if __name__ == '__main__':
     parser.add_argument("summary", help="a file of summaries, one sentence per line.")
     parser.add_argument("reference", help="a file of references, one sentence per line")
     parser.add_argument("-a", "--alpha", help="weight factor for the recall in the F1-measure", type=float)
+    parser.add_argument("-w", "--weight", help="weight factor for the ROUGE-W", type=float)
     args = parser.parse_args()
 
     summary = _read_corpus(args.summary)
@@ -74,6 +76,7 @@ if __name__ == '__main__':
         'ROUGE-1': lambda s, r: rouge_n_sentence_level(s, r, 1, args.alpha)[-1],
         'ROUGE-2': lambda s, r: rouge_n_sentence_level(s, r, 2, args.alpha)[-1],
         'ROUGE-L': lambda s, r: rouge_l_sentence_level(s, r, args.alpha)[-1],
+        'ROUGE-W': lambda s, r: rouge_w_sentence_level(s, r, weight=args.weight, alpha=args.alpha)[-1],
     }
 
     for name, fn in metric_fns.items():

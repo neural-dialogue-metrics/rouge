@@ -17,7 +17,7 @@ from setuptools import setup
 
 setup(
     name='rouge',
-    version='0.1.0',
+    version='0.2.0',
     description='An implementation of ROUGE family metrics for automatic summarization',
     url='https://github.com/neural-dialogue-metrics/rouge.git',
     author='cgsdfc',

@@ -553,11 +553,11 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     """
     Compute the summary level ROUGE-W.
 
-    :param summary_sentences:
-    :param reference_sentences:
-    :param weight:
-    :param alpha:
-    :return:
+    :param summary_sentences: a list of sentences.
+    :param reference_sentences: a list of sentences.
+    :param weight: float, the weight factor passed to the weight function.
+    :param alpha: weight on the recall (default 0.5).
+    :return: a 3-tuple, recall, precision and f1 measure.
     """
 
     total_wlcs_hits = 0
@@ -566,21 +566,15 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     summary_unigrams = _flatten_and_count_ngrams(summary_sentences, 1)
     reference_unigrams = _flatten_and_count_ngrams(reference_sentences, 1)
 
-    r_denominator = sum(
-        _weight_fn(len(sentence), weight=weight) for sentence in reference_sentences
+    r_denominator = _weight_fn(
+        sum(_weight_fn(len(sentence), weight=weight) for sentence in reference_sentences),
+        weight=weight,
     )
 
-    # I don't know why they put one more weight_fn here.
-    r_denominator = _weight_fn(r_denominator, weight)
-
-    p_denominator = sum(
-        len(sentence) for sentence in summary_sentences
+    p_denominator = _weight_fn(
+        sum(len(sentence) for sentence in summary_sentences),
+        weight=weight,
     )
-
-    p_denominator = _weight_fn(p_denominator, weight)
-
-    # logging.info('model count %f', r_denominator)
-    # logging.info('peer count %f', p_denominator)
 
     for reference in reference_sentences:
         hit_len = 0
@@ -603,9 +597,6 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     recall = _divide_and_normalize(total_wlcs_hits, r_denominator, weight)
     precision = _divide_and_normalize(total_wlcs_hits, p_denominator, weight)
     f1 = _compute_f1_measure(recall, precision, alpha)
-
-    # logging.info('hit %f', total_wlcs_hits)
-
     return recall, precision, f1
 
 
