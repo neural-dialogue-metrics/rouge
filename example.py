@@ -13,12 +13,12 @@
 # limitations under the License.
 # ==============================================================================
 """Examples."""
-from rouge.rouge import rouge_n_sentence_level
-from rouge.rouge import rouge_l_sentence_level
-from rouge.rouge import rouge_n_summary_level
-from rouge.rouge import rouge_l_summary_level
-from rouge.rouge import rouge_w_sentence_level
-from rouge.rouge import rouge_w_summary_level
+from rouge import rouge_n_sentence_level
+from rouge import rouge_l_sentence_level
+from rouge import rouge_n_summary_level
+from rouge import rouge_l_summary_level
+from rouge import rouge_w_sentence_level
+from rouge import rouge_w_summary_level
 
 if __name__ == '__main__':
     # The use of sentence level rouges.
@@ -26,8 +26,8 @@ if __name__ == '__main__':
     summary_sentence = 'the gunman police killed'.split()
 
     print('Sentence level:')
-    _, _, rouge_1 = rouge_n_sentence_level(summary_sentence, reference_sentence, 1)
-    print('ROUGE-1: %f' % rouge_1)
+    score = rouge_n_sentence_level(summary_sentence, reference_sentence, 1)
+    print('ROUGE-1: %f' % score.f1_measure)
 
     _, _, rouge_2 = rouge_n_sentence_level(summary_sentence, reference_sentence, 2)
     print('ROUGE-2: %f' % rouge_2)

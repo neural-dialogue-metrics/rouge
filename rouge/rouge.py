@@ -24,6 +24,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 __all__ = [
+    "RougeScore",
     "rouge_n_sentence_level",
     "rouge_l_sentence_level",
     "rouge_l_summary_level",
@@ -32,6 +33,9 @@ __all__ = [
     "rouge_w_summary_level",
 ]
 
+RougeScore = collections.namedtuple('RougeScore', 'recall precision f1_measure')
+
+DEFAULT_ALPHA = 0.5
 DEFAULT_WEIGHT_FACTOR = 1.2
 
 
@@ -140,7 +144,7 @@ def _f1_measure(numerator, r_denominator, p_denominator, alpha=None):
     recall = _divide_or_zero(numerator, r_denominator)
     precision = _divide_or_zero(numerator, p_denominator)
     f1 = _compute_f1_measure(recall, precision, alpha)
-    return recall, precision, f1
+    return RougeScore(recall, precision, f1)
 
 
 def _clipped_ngram_count(summary_ngrams, reference_ngrams):
@@ -225,8 +229,9 @@ def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None)
 
 def _lcs_length(x, y):
     """
-    Compute the length of the Longest Common Subsequence between sequences x
-    and y.
+    Computes the length of the longest common subsequence (lcs) between two
+    strings. The implementation below uses a DP programming algorithm and runs
+    in O(nm) time where n = len(x) and m = len(y).
     Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence
 
     >>> _lcs_length('ABCDE', 'CD')
@@ -239,31 +244,18 @@ def _lcs_length(x, y):
     :return: Length of LCS between x and y
     """
     n, m = len(x), len(y)
+    len_table = {}
 
-    def _compute_lcs_table():
-        """
-        Computes the length of the longest common subsequence (lcs) between two
-        strings. The implementation below uses a DP programming algorithm and runs
-        in O(nm) time where n = len(x) and m = len(y).
-        Source: http://www.algorithmist.com/index.php/Longest_Common_Subsequence
+    for i in range(n + 1):
+        for j in range(m + 1):
+            if i == 0 or j == 0:
+                len_table[i, j] = 0
+            elif x[i - 1] == y[j - 1]:
+                len_table[i, j] = len_table[i - 1, j - 1] + 1
+            else:
+                len_table[i, j] = max(len_table[i - 1, j], len_table[i, j - 1])
 
-        :param x: collection of words
-        :param y: collection of words
-        :return Table of dictionary of coord.
-        """
-        len_table = {}
-        for i in range(n + 1):
-            for j in range(m + 1):
-                if i == 0 or j == 0:
-                    len_table[i, j] = 0
-                elif x[i - 1] == y[j - 1]:
-                    len_table[i, j] = len_table[i - 1, j - 1] + 1
-                else:
-                    len_table[i, j] = max(len_table[i - 1, j], len_table[i, j - 1])
-        return len_table
-
-    table = _compute_lcs_table()
-    return table[n, m]
+    return len_table[n, m]
 
 
 def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
@@ -328,44 +320,26 @@ def _lcs_elements(x, y):
     :return: a set.
     """
 
-    def _compute_lcs_table():
-        """
-        Compute the length table and trace table for the LCS problem of x and y.
-        From the length table one can get the len of LCS.
-        From the trace table one can get the actual sequence and the indices of each element
-        from both x and y.
+    n, m = len(x), len(y)
+    len_table = {}
+    trace_table = {}
+    for i in range(n + 1):
+        for j in range(m + 1):
+            if i == 0 or j == 0:
+                # Initialize the tables are we do the loop.
+                # This saves us dedicated init code at the cost of some performance.
+                len_table[i, j] = 0
+            elif x[i - 1] == y[j - 1]:
+                len_table[i, j] = len_table[i - 1, j - 1] + 1
+                trace_table[i, j] = 'd'  # go diagonal.
+            elif len_table[i - 1, j] > len_table[i, j - 1]:
+                len_table[i, j] = len_table[i - 1, j]
+                trace_table[i, j] = 'u'  # go up.
+            else:
+                len_table[i, j] = len_table[i, j - 1]
+                trace_table[i, j] = 'l'  # go left.
 
-        The function is so factored that we don't need to compute the elements of a LCS when
-        we only need its length. In `rouge_l_sentence_level`, only the len is needed since we
-        don't perform any union operation. In `rouge_l_summary_level`, the elements are needed
-        and more computation is spent on it.
-
-        :param x: a sequence.
-        :param y: a sequence.
-        :return len_table, trace_table.
-        """
-        n, m = len(x), len(y)
-        len_table = {}
-        trace_table = {}
-        for i in range(n + 1):
-            for j in range(m + 1):
-                if i == 0 or j == 0:
-                    # Initialize the tables are we do the loop.
-                    # This saves us dedicated init code at the cost of some performance.
-                    len_table[i, j] = 0
-                elif x[i - 1] == y[j - 1]:
-                    len_table[i, j] = len_table[i - 1, j - 1] + 1
-                    trace_table[i, j] = 'd'  # go diagonal.
-                elif len_table[i - 1, j] > len_table[i, j - 1]:
-                    len_table[i, j] = len_table[i - 1, j]
-                    trace_table[i, j] = 'u'  # go up.
-                else:
-                    len_table[i, j] = len_table[i, j - 1]
-                    trace_table[i, j] = 'l'  # go left.
-        return trace_table
-
-    table = _compute_lcs_table()
-    return _compute_lcs_elements(table, x, y)
+    return _compute_lcs_elements(trace_table, x, y)
 
 
 def _make_lcs_union(summary_sentences, reference_sentence):
@@ -597,7 +571,7 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     recall = _divide_and_normalize(total_wlcs_hits, r_denominator, weight)
     precision = _divide_and_normalize(total_wlcs_hits, p_denominator, weight)
     f1 = _compute_f1_measure(recall, precision, alpha)
-    return recall, precision, f1
+    return RougeScore(recall, precision, f1)
 
 
 def rouge_w_sentence_level(summary_sentence, reference_sentence, weight=None, alpha=None):

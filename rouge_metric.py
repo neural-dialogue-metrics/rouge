@@ -21,9 +21,9 @@ from __future__ import unicode_literals
 
 import argparse
 
-from rouge.rouge import rouge_n_sentence_level
-from rouge.rouge import rouge_l_sentence_level
-from rouge.rouge import rouge_w_sentence_level
+from rouge import rouge_n_sentence_level
+from rouge import rouge_l_sentence_level
+from rouge import rouge_w_sentence_level
 
 
 def _break_into_words(line):
