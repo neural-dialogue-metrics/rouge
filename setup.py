@@ -28,12 +28,19 @@ setup(
         'computational linguistics',
         'automatic summarization',
     ],
-    packages=['rouge'],
+    packages=[
+        'rouge',
+        'rouge.tests',
+    ],
+    package_data={
+        'rouge.tests': ['data/*'],
+    },
     classifiers=[
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: Apache-v2',
         'Programming Language :: Python :: 3',
-        'Topic :: Text Processing :: Linguistic'
+        'License :: OSI Approved :: MIT License',
+        'Topic :: Text Processing :: Linguistic',
+        "Operating System :: OS Independent",
     ],
     license='LICENCE.txt',
     long_description=open('README.md').read(),

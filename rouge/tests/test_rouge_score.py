@@ -1,6 +1,5 @@
 import unittest
 from rouge.rouge import RougeScore
-import rouge.rouge as rouge_metrics
 
 
 class TestRougeScore(unittest.TestCase):
