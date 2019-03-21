@@ -34,9 +34,9 @@ class TestRougeW(unittest.TestCase):
 
         for ours, theirs in zip(ours_score, theirs_score):
             self.assertAlmostEqual(ours, theirs, delta=1e-5, msg="""
-                                                            ours_score = %r
-                                                            theirs_score = %r
-                                                            """ % (ours_score, theirs_score))
+                        ours_score = %r
+                        theirs_score = %r
+                        """ % (ours_score, theirs_score))
 
     def test_sentence_level(self):
         for ours_data, theirs_data in load_sentence_pairs():

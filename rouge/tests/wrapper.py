@@ -201,7 +201,7 @@ def rouge_w_sentence_level(summary_sentence, reference_sentence):
     )
     prefix = 'ROUGE-W-1.2-'
     score = rouge.calc_score()
-    # logging.info(_get_command(rouge))
+    logging.info(_get_command(rouge))
     return _parse_output(prefix, score)
 
 
@@ -212,4 +212,5 @@ def rouge_w_summary_level(summary_sentences, reference_sentences):
     )
     prefix = 'ROUGE-W-1.2-'
     score = rouge.calc_score()
+    logging.info(_get_command(rouge))
     return _parse_output(prefix, score)

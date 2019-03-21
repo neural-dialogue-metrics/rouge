@@ -566,11 +566,6 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     summary_unigrams = _flatten_and_count_ngrams(summary_sentences, 1)
     reference_unigrams = _flatten_and_count_ngrams(reference_sentences, 1)
 
-    # logging.info('count of 1gram: %f', sum(summary_unigrams.values()))
-
-    # logging.info('count of total words: %f', sum(len(sent) for sent in summary_sentences))
-    # logging.info('f(sum of len): %f', _weight_fn())
-
     r_denominator = sum(
         _weight_fn(len(sentence), weight=weight) for sentence in reference_sentences
     )
@@ -578,12 +573,13 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     # I don't know why they put one more weight_fn here.
     r_denominator = _weight_fn(r_denominator, weight)
 
-    # logging.info('model count %f', r_denominator)
-    # logging.info('f(model count) %f', _weight_fn(r_denominator, weight))
-
     p_denominator = sum(
-        _weight_fn(len(sentence), weight=weight) for sentence in summary_sentences
+        len(sentence) for sentence in summary_sentences
     )
+
+    p_denominator = _weight_fn(p_denominator, weight)
+
+    # logging.info('model count %f', r_denominator)
     # logging.info('peer count %f', p_denominator)
 
     for reference in reference_sentences:
