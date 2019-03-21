@@ -17,12 +17,15 @@ __all__ = [
     "rouge_n_summary_level",
     "rouge_w_sentence_level",
     "rouge_w_summary_level",
+    "rouge_s_sentence_level",
+    "rouge_s_summary_level",
 ]
 
 RougeScore = collections.namedtuple('RougeScore', 'recall precision f1_measure')
 
 DEFAULT_ALPHA = 0.5
 DEFAULT_WEIGHT_FACTOR = 1.2
+DEFAULT_SKIP_DISTANCE = 4
 
 
 ###############################
@@ -572,3 +575,99 @@ def rouge_w_sentence_level(summary_sentence, reference_sentence, weight=None, al
     :return: a 3-tuple, recall, precision and f1 measure.
     """
     return rouge_w_summary_level([summary_sentence], [reference_sentence], weight, alpha)
+
+
+###############################
+#           ROUGE-S
+###############################
+
+def _get_skip_bigrams(words, skip_distance=None):
+    """
+    Compute the skip-bigrams of words as an iterator.
+
+    Skip-bigram is a pair of words since we are on the special case of n-grams -- Bigram.
+    Unlike tradition bigram, skip-bigram allows the two words *not* to be consecutive in the sentence.
+    There can be other words between them being *skipped*.
+    The number of words being skipped is controlled by the parameter skip_distance.
+    Skip distance is the maximum number of words allowed to fall in range formed by the two words
+    of a skip-bigram. If skip distance is 0, that means *no word* should fall between and thus forms
+    the conventional bigram.
+
+    The skip distance exists to avoid arbitrarily long range of words sitting between a skip-gram
+    since that makes the count less meaningful.
+
+    If the skip_distance is negative, it means *set no limit*. Use that for good reasons.
+
+    >>> # Use the default skip distance, which is 4.
+    >>> list(_get_skip_bigrams('abcd'))
+    [('a', 'b'), ('a', 'c'), ('a', 'd'), ('b', 'c'), ('b', 'd'), ('c', 'd')]
+
+    >>> # Limit the skip distance to 1 -- there can at most be one word between the bigrams.
+    >>> list(_get_skip_bigrams('abcd', skip_distance=1))
+    [('a', 'b'), ('a', 'c'), ('b', 'c'), ('b', 'd'), ('c', 'd')]
+
+    >>> # Example from the paper.
+    >>> list(_get_skip_bigrams('police killed the gunman'.split()))
+    [('police', 'killed'), ('police', 'the'), ('police', 'gunman'), ('killed', 'the'), ('killed', 'gunman'), ('the', 'gunman')]
+
+    :param words: a list of tokens.
+    :param skip_distance: The maximum number of words allowed to be skipped.
+    :return: a iterator to the skip-bigrams.
+    """
+    if skip_distance is None:
+        skip_distance = DEFAULT_SKIP_DISTANCE
+    for i, word in enumerate(words):
+        for j in range(i + 1, len(words)):
+            if skip_distance < 0 or j - i - 1 <= skip_distance:
+                yield word, words[j]
+
+
+def _count_skip_bigrams(words, skip_distance=None):
+    """
+    Return a Counter counting the skip-bigrams of words.
+
+    :param words: a list of tokens.
+    :param skip_distance: The maximum number of words allowed to be skipped.
+    :return: collections.Counter.
+    """
+    return collections.Counter(_get_skip_bigrams(words, skip_distance))
+
+
+def rouge_s_sentence_level(summary_sentence, reference_sentence, skip_distance=None, alpha=None):
+    """
+    Compute sentence level ROUGE-S.
+
+    :param summary_sentence:
+    :param reference_sentence:
+    :param skip_distance:
+    :param alpha:
+    :return:
+    """
+    summary_skip_bigrams = _count_skip_bigrams(summary_sentence, skip_distance)
+    reference_skip_bigrams = _count_skip_bigrams(reference_sentence, skip_distance)
+    hits = _clipped_ngram_count(summary_skip_bigrams, reference_skip_bigrams)
+
+    return _f1_measure(
+        numerator=hits,
+        r_denominator=sum(reference_skip_bigrams.values()),
+        p_denominator=sum(summary_skip_bigrams.values()),
+        alpha=alpha,
+    )
+
+
+def rouge_s_summary_level(summary_sentences, reference_sentences, skip_distance=None, alpha=None):
+    """
+    Compute summary level ROUGE-S.
+
+    :param summary_sentences:
+    :param reference_sentences:
+    :param skip_distance:
+    :param alpha:
+    :return:
+    """
+    return rouge_s_sentence_level(
+        summary_sentence=_flatten_sentences(summary_sentences),
+        reference_sentence=_flatten_sentences(reference_sentences),
+        skip_distance=skip_distance,
+        alpha=alpha,
+    )

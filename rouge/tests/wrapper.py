@@ -199,3 +199,9 @@ def rouge_w_summary_level(summary_sentences, reference_sentences):
     score = rouge.calc_score()
     # logging.info(_get_command(rouge))
     return _parse_output(prefix, score)
+
+
+def _make_rouge_s(summary, reference):
+    return _make_rouge(
+
+    )

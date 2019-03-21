@@ -35,6 +35,10 @@ setup(
     package_data={
         'rouge.tests': ['data/*'],
     },
+    scripts=[
+        'example.py',
+        'rouge_metric.py',
+    ],
     classifiers=[
         'Intended Audience :: Science/Research',
         'Programming Language :: Python :: 3',

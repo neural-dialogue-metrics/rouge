@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Driver script to compute ROUGE score."""
 from __future__ import absolute_import
 from __future__ import division
