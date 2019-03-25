@@ -1,1 +1,1 @@
-from rouge.rouge import *
+from rouge.metrics import *

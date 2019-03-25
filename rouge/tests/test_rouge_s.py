@@ -8,8 +8,8 @@ from rouge.tests import summary, reference
 from rouge.tests import load_sentence_pairs
 from rouge.tests import load_summary_pairs
 
-from rouge.rouge import rouge_s_sentence_level
-from rouge.rouge import rouge_s_summary_level
+from rouge.metrics import rouge_s_sentence_level
+from rouge.metrics import rouge_s_summary_level
 
 
 class TestRougeS(unittest.TestCase):

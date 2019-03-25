@@ -9,8 +9,8 @@ from rouge.tests import reference
 from rouge.tests.wrapper import rouge_n_sentence_level as _rouge_n_sentence_level
 from rouge.tests.wrapper import rouge_n_summary_level as _rouge_n_summary_level
 
-from rouge.rouge import rouge_n_sentence_level
-from rouge.rouge import rouge_n_summary_level
+from rouge.metrics import rouge_n_sentence_level
+from rouge.metrics import rouge_n_summary_level
 
 
 class TestRougeN(unittest.TestCase):
