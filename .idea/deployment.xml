@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" persistUploadOnCheckin="false">
+    <serverData>
+      <paths name="Aliyun">
+        <serverdata>
+          <mappings>
+            <mapping deploy="" local="$PROJECT_DIR$" web="/" />
+            <mapping deploy="/mnt" local="$PROJECT_DIR$/../tmp" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="Lab">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/deployment/Rouge/rouge" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
