@@ -24,7 +24,7 @@ setup(
     },
     scripts=[
         'example.py',
-        'bin/rouge_score.py',
+        'rouge_score.py',
     ],
     classifiers=[
         'Intended Audience :: Science/Research',

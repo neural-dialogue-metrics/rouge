@@ -12,6 +12,8 @@ import logging
 
 from rouge import *
 
+logger = logging.getLogger(__name__)
+
 
 class MetricWrapper:
 
@@ -23,10 +25,10 @@ class MetricWrapper:
         self._kwargs = kwargs
 
     def sentence_score(self, sum, ref):
-        return self._sentence_score(sum, ref, alpha=self.alpha, **self._kwargs)
+        return self._sentence_score(sum, ref, alpha=self.alpha, **self._kwargs).f1_measure
 
     def summary_score(self, sum, ref):
-        return self._summary_score(sum, ref, alpha=self.alpha, **self._kwargs)
+        return self._summary_score(sum, ref, alpha=self.alpha, **self._kwargs).f1_measure
 
     @property
     def params(self):
@@ -37,6 +39,7 @@ class MetricWrapper:
         return dir.joinpath(self.name).with_suffix('.json')
 
     def eval(self, summary, reference, output_dir):
+        logger.info('computing %s', self.name)
         scores = [self.sentence_score(s, r) for s, r in zip(summary, reference)]
         system = self.summary_score(summary, reference)
         write_score(
@@ -62,7 +65,12 @@ def _read_corpus(file):
 
 
 class Runner:
+
     def __init__(self, summary_file, reference_file, output_dir):
+        logger.info('summary_file: %s', summary_file)
+        logger.info('reference_file: %s', reference_file)
+        logger.info('output_dir: %s', output_dir)
+
         self.summary = _read_corpus(summary_file)
         self.reference = _read_corpus(reference_file)
         self.output_dir = Path(output_dir)
@@ -79,12 +87,20 @@ class Runner:
         if args.rouge_n:
             for n in args.rouge_n:
                 yield MetricWrapper(
-                    name='rouge_n',
+                    name='rouge_n_%d' % n,
                     sentence_score=rouge_n_sentence_level,
                     summary_score=rouge_n_summary_level,
                     alpha=args.alpha,
                     n=n,
                 )
+
+        if args.rouge_l:
+            yield MetricWrapper(
+                name='rouge_l',
+                sentence_score=rouge_l_sentence_level,
+                summary_score=rouge_l_summary_level,
+                alpha=args.alpha,
+            )
 
         if args.rouge_w:
             yield MetricWrapper(
@@ -93,14 +109,6 @@ class Runner:
                 summary_score=rouge_w_summary_level,
                 alpha=args.alpha,
                 weight=args.weight,
-            )
-
-        if args.rouge_l:
-            yield MetricWrapper(
-                name='rouge_l',
-                sentence_score=rouge_l_sentence_level,
-                summary_score=rouge_l_summary_level,
-                alpha=args.alpha,
             )
 
 
