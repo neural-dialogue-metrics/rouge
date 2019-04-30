@@ -1,6 +1,6 @@
 from setuptools import setup
 
-__version__ = '0.2.3'
+__version__ = '0.3.0'
 
 setup(
     name='rouge',
@@ -24,7 +24,7 @@ setup(
     },
     scripts=[
         'example.py',
-        'rouge_metric.py',
+        'bin/rouge_score.py',
     ],
     classifiers=[
         'Intended Audience :: Science/Research',

@@ -23,7 +23,7 @@ __all__ = [
 
 RougeScore = collections.namedtuple('RougeScore', 'recall precision f1_measure')
 
-DEFAULT_ALPHA = 0.5
+DEFAULT_ALPHA = 0.9
 DEFAULT_WEIGHT_FACTOR = 1.2
 DEFAULT_SKIP_DISTANCE = 4
 
@@ -388,7 +388,7 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
     Calculate the summary level ROUGE-L.
     :param summary_sentences: a list of sentence.
     :param reference_sentences: a list of sentence.
-    :param alpha: weight on the recall (default 0.5).
+    :param alpha: weight on the recall.
     :return: a 3-tuple, recall, precision and f1 measure.
     """
     summary_unigrams = _flatten_and_count_ngrams(summary_sentences, 1)
@@ -519,7 +519,7 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     :param summary_sentences: a list of sentences.
     :param reference_sentences: a list of sentences.
     :param weight: float, the weight factor passed to the weight function.
-    :param alpha: weight on the recall (default 0.5).
+    :param alpha: weight on the recall.
     :return: a 3-tuple, recall, precision and f1 measure.
     """
 
@@ -571,7 +571,7 @@ def rouge_w_sentence_level(summary_sentence, reference_sentence, weight=None, al
     :param summary_sentence: a sentence produced by the system.
     :param reference_sentence: a sentence as ground truth.
     :param weight: float, the weight factor passed to the weight function.
-    :param alpha: weight on the recall (default 0.5).
+    :param alpha: weight on the recall.
     :return: a 3-tuple, recall, precision and f1 measure.
     """
     return rouge_w_summary_level([summary_sentence], [reference_sentence], weight, alpha)
