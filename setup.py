@@ -34,5 +34,5 @@ setup(
         "Operating System :: OS Independent",
     ],
     license='LICENCE.txt',
-    long_description=open('README.md').read(),
+    long_description=open('README.md').read(), install_requires=['numpy']
 )
