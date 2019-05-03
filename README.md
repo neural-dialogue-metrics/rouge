@@ -95,7 +95,7 @@ number of `response-ground_truth` pairs quickly. The wrapper way is not taken si
 ## Simplification of the Problem
 The first simplification we made is to throw away any preprocessing and stick to a general representation of *sentence*.
 A sentence is just a list of strings or tokens. Since then we don't have to implement any tokenizer. In fact we don't
-*need* to because there are a lot of libraries can do that nicely, like `nltk` and `spicy`.
+*need* to because there are a lot of libraries can do that nicely, like `nltk` and `spacy`.
 
 The second decision is that we don't care about *multiple references and multiple summaries*.
 We *only* care about *a single reference and a single summary*. Unlike BLEU, multiple references means all the same
