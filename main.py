@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2019 Cong Feng
+# Copyright (c) 2019 Cong Feng.
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,21 +20,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-import unittest
-from rouge.metrics import RougeScore
 
+from pathlib import Path as P
 
-class TestRougeScore(unittest.TestCase):
+COMMENT_CHARS = "#"
+lic = P("./LICENSE").read_text().splitlines()
+lic = [" ".join([COMMENT_CHARS, line]) for line in lic]
+lic = "\n".join(lic) + "\n\n"
 
-    def test_basic(self):
-        """
-        Basic properties of RougeScore.
-        :return:
-        """
-        score = RougeScore(recall=0.5, precision=0.5, f1_measure=0.5)
-        print(score)
-        self.assertAlmostEqual(score.recall, 0.5)
-        self.assertAlmostEqual(score.precision, 0.5)
-        self.assertAlmostEqual(score.f1_measure, 0.5)
+import itertools
 
-        self.assertEqual(list(score), [0.5] * 3)
+for f in itertools.chain(
+    P("./rouge").rglob("*.py"),
+):
+    code = lic + f.read_text()
+    f.write_text(code)
