@@ -1,17 +1,17 @@
 # MIT License
-# 
+#
 # Copyright (c) 2019 Cong Feng
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -44,11 +44,17 @@ class TestRougeN(unittest.TestCase):
             theirs_score = _rouge_n_sentence_level(summary, reference, n=n)
 
             for ours, theirs in zip(ours_score, theirs_score):
-                self.assertAlmostEqual(ours, theirs, delta=1e-5, msg="""
-                                                 ours_score = %r
-                                                 theirs_score = %r
-                                                 n = %r
-                                                 """ % (ours_score, theirs_score, n))
+                self.assertAlmostEqual(
+                    ours,
+                    theirs,
+                    delta=1e-5,
+                    msg="""
+                         ours_score = %r
+                         theirs_score = %r
+                         n = %r
+                         """
+                    % (ours_score, theirs_score, n),
+                )
 
     def test_sentence_level(self):
         for n in self.N_TO_TEST:
@@ -57,14 +63,20 @@ class TestRougeN(unittest.TestCase):
                 theirs_score = _rouge_n_sentence_level(*theirs_data, n=n)
 
                 for ours, theirs in zip(ours_score, theirs_score):
-                    self.assertAlmostEqual(ours, theirs, delta=1e-5, msg="""
-                                      ours_data = %r
-                                      theirs_data = %r
-                                      
-                                      ours_score = %r
-                                      theirs_score = %r
-                                      n = %r
-                                      """ % (ours_data, theirs_data, ours_score, theirs_score, n))
+                    self.assertAlmostEqual(
+                        ours,
+                        theirs,
+                        delta=1e-5,
+                        msg="""
+                          ours_data = %r
+                          theirs_data = %r
+                          
+                          ours_score = %r
+                          theirs_score = %r
+                          n = %r
+                          """
+                        % (ours_data, theirs_data, ours_score, theirs_score, n),
+                    )
 
     def test_summary_level(self):
         for n in self.N_TO_TEST:
@@ -73,11 +85,17 @@ class TestRougeN(unittest.TestCase):
                 theirs_score = _rouge_n_summary_level(*theirs_data, n=n)
 
                 for ours, theirs in zip(ours_score, theirs_score):
-                    self.assertAlmostEqual(ours, theirs, delta=1e-5, msg="""
-                                             ours_data = %r
-                                             theirs_data = %r
-    
-                                             ours_score = %r
-                                             theirs_score = %r
-                                             n = %r
-                                             """ % (ours_data, theirs_data, ours_score, theirs_score, n))
+                    self.assertAlmostEqual(
+                        ours,
+                        theirs,
+                        delta=1e-5,
+                        msg="""
+                             ours_data = %r
+                             theirs_data = %r
+
+                             ours_score = %r
+                             theirs_score = %r
+                             n = %r
+                             """
+                        % (ours_data, theirs_data, ours_score, theirs_score, n),
+                    )

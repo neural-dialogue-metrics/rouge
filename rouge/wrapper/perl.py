@@ -25,16 +25,16 @@ import os
 import collections
 import tempfile
 
-ROUGE_HOME = os.path.join(os.path.dirname(__file__), 'ROUGE-1.5.5')
-assert os.path.isdir(ROUGE_HOME), 'ROUGE_HOME is broken!'
+ROUGE_HOME = os.path.join(os.path.dirname(__file__), "ROUGE-1.5.5")
+assert os.path.isdir(ROUGE_HOME), "ROUGE_HOME is broken!"
 
-ROUGE_DATA_HOME = os.path.join(ROUGE_HOME, 'data')
-assert os.path.isdir(ROUGE_DATA_HOME), 'ROUGE_DATA_HOME is broken!'
+ROUGE_DATA_HOME = os.path.join(ROUGE_HOME, "data")
+assert os.path.isdir(ROUGE_DATA_HOME), "ROUGE_DATA_HOME is broken!"
 
-ROUGE_EXECUTABLE = os.path.join(ROUGE_HOME, 'ROUGE-1.5.5.pl')
-assert os.path.isfile(ROUGE_EXECUTABLE), 'ROUGE_EXECUTABLE is broken!'
+ROUGE_EXECUTABLE = os.path.join(ROUGE_HOME, "ROUGE-1.5.5.pl")
+assert os.path.isfile(ROUGE_EXECUTABLE), "ROUGE_EXECUTABLE is broken!"
 
-_ROUGE_README = os.path.join(ROUGE_HOME, 'README.txt')
+_ROUGE_README = os.path.join(ROUGE_HOME, "README.txt")
 
 
 def print_readme():
@@ -52,11 +52,12 @@ class RougeParams:
     It gives them readable names, sensible default values and online document.
     It translates our readable names to the single-character option understood by the perl script.
     """
+
     # valid values for config_format.
-    CONFIG_FORMATS = ('SEE', 'SPL', 'ISI', 'SIMPLE')
+    CONFIG_FORMATS = ("SEE", "SPL", "ISI", "SIMPLE")
 
     # valid values for scoring_formula.
-    SCORING_FORMULAS = ('A', 'B')
+    SCORING_FORMULAS = ("A", "B")
 
     # valid values for counting_unit.
     COUNT_SENTENCE = 0
@@ -76,37 +77,43 @@ class RougeParams:
     BE_HMR1 = 4  # HM and HMR scoring (same as HMR for Minipar-based BEs).
     BE_HMR2 = 5  # H, HM and HMR scoring (same as HMR for Minipar-based BEs).
     BASIC_ELEMENTS = (
-        BE_H, BE_HM, BE_HMR,
-        BE_HM1, BE_HMR1, BE_HMR2,
+        BE_H,
+        BE_HM,
+        BE_HMR,
+        BE_HM1,
+        BE_HMR1,
+        BE_HMR2,
     )
 
     # valid values for confidence_interval [0, 100].
     CONFIDENCE_INTERVALS = range(101)
 
-    def __init__(self,
-                 config_file: str,
-                 system_id=None,
-                 skip_distance: int = None,
-                 skip_with_unigram: bool = None,
-                 basic_element: int = None,
-                 all_systems: bool = None,
-                 confidence_interval: int = None,
-                 print_when_eval: bool = None,
-                 env: str = None,
-                 scoring_formula: str = None,
-                 print_help: bool = None,
-                 max_bytes: int = None,
-                 max_words: int = None,
-                 stemming: bool = None,
-                 max_ngram: int = None,
-                 alpha: float = None,
-                 remove_stopwords: bool = None,
-                 counting_unit: int = None,
-                 resampling_points: int = None,
-                 wlcs_weight: float = None,
-                 verbose: bool = None,
-                 no_rouge_l: bool = None,
-                 config_format: str = None):
+    def __init__(
+        self,
+        config_file: str,
+        system_id=None,
+        skip_distance: int = None,
+        skip_with_unigram: bool = None,
+        basic_element: int = None,
+        all_systems: bool = None,
+        confidence_interval: int = None,
+        print_when_eval: bool = None,
+        env: str = None,
+        scoring_formula: str = None,
+        print_help: bool = None,
+        max_bytes: int = None,
+        max_words: int = None,
+        stemming: bool = None,
+        max_ngram: int = None,
+        alpha: float = None,
+        remove_stopwords: bool = None,
+        counting_unit: int = None,
+        resampling_points: int = None,
+        wlcs_weight: float = None,
+        verbose: bool = None,
+        no_rouge_l: bool = None,
+        config_format: str = None,
+    ):
         """
 
         :param config_file: The configure file describing the peer and model summaries.
@@ -140,7 +147,7 @@ class RougeParams:
         self.config_file = config_file
 
         if system_id is not None and all_systems:
-            raise ValueError('either system_id or all_systems, not both')
+            raise ValueError("either system_id or all_systems, not both")
         self.system_id = system_id
         self.all_systems = all_systems
 
@@ -149,11 +156,14 @@ class RougeParams:
 
         if basic_element is not None:
             if basic_element not in self.BASIC_ELEMENTS:
-                raise ValueError('invalid basic_element')
+                raise ValueError("invalid basic_element")
         self.basic_element = basic_element
 
-        if not (confidence_interval is None or confidence_interval in self.CONFIDENCE_INTERVALS):
-            raise ValueError('invalid confidence_interval')
+        if not (
+            confidence_interval is None
+            or confidence_interval in self.CONFIDENCE_INTERVALS
+        ):
+            raise ValueError("invalid confidence_interval")
 
         self.confidence_interval = confidence_interval
         self.print_when_eval = print_when_eval
@@ -161,7 +171,7 @@ class RougeParams:
 
         if scoring_formula is not None:
             if scoring_formula not in self.SCORING_FORMULAS:
-                raise ValueError('invalid scoring formula')
+                raise ValueError("invalid scoring formula")
         self.scoring_formula = scoring_formula
 
         self.max_bytes = max_bytes
@@ -177,7 +187,7 @@ class RougeParams:
 
         if counting_unit is not None:
             if counting_unit not in self.COUNTING_UNITS:
-                raise ValueError('invalid counting_unit')
+                raise ValueError("invalid counting_unit")
         self.counting_unit = counting_unit
 
         self.resampling_points = resampling_points
@@ -186,7 +196,7 @@ class RougeParams:
         self.no_rouge_l = no_rouge_l
         if config_format is not None:
             if config_format not in self.CONFIG_FORMATS:
-                raise ValueError('invalid config_format')
+                raise ValueError("invalid config_format")
         self.config_format = config_format
 
     def make_options(self):
@@ -195,40 +205,40 @@ class RougeParams:
         :return:
         """
         options = [ROUGE_EXECUTABLE]
-        options.extend(['-e', self.env])
-        options.extend(['-n', self.max_ngram])
+        options.extend(["-e", self.env])
+        options.extend(["-n", self.max_ngram])
         if self.all_systems:
-            options.append('-a')
+            options.append("-a")
         if self.skip_distance is not None:
-            options.extend(['-2', self.skip_distance])
+            options.extend(["-2", self.skip_distance])
         if self.basic_element is not None:
-            options.extend(['-3', self.basic_element])
+            options.extend(["-3", self.basic_element])
         if self.skip_with_unigram:
-            options.append('-u')
+            options.append("-u")
         if self.remove_stopwords:
-            options.append('-s')
+            options.append("-s")
         if self.stemming:
-            options.append('-m')
+            options.append("-m")
         if self.print_when_eval is not None:
-            options.append('-d')
+            options.append("-d")
         if self.alpha is not None:
-            options.extend(['-p', self.alpha])
+            options.extend(["-p", self.alpha])
         if self.max_bytes is not None:
-            options.extend(['-b', self.max_bytes])
+            options.extend(["-b", self.max_bytes])
         if self.max_words is not None:
-            options.extend(['-l', self.max_words])
+            options.extend(["-l", self.max_words])
         if self.counting_unit is not None:
-            options.extend(['-t', self.counting_unit])
+            options.extend(["-t", self.counting_unit])
         if self.confidence_interval is not None:
-            options.extend(['-c', self.confidence_interval])
+            options.extend(["-c", self.confidence_interval])
         if self.verbose:
-            options.append('-v')
+            options.append("-v")
         if self.no_rouge_l:
-            options.append('-x')
+            options.append("-x")
         if self.resampling_points is not None:
-            options.extend(['-r', self.resampling_points])
+            options.extend(["-r", self.resampling_points])
         if self.scoring_formula is not None:
-            options.extend(['-f', self.scoring_formula])
+            options.extend(["-f", self.scoring_formula])
 
         options.append(self.config_file)
 
@@ -239,6 +249,4 @@ class RougeParams:
         return list(map(str, options))
 
     def make_cmdline(self):
-        return ' '.join(self.make_options())
-
-
+        return " ".join(self.make_options())

@@ -1,17 +1,17 @@
 # MIT License
-# 
+#
 # Copyright (c) 2019 Cong Feng
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -28,12 +28,11 @@ from pythonrouge import Pythonrouge
 
 logging.basicConfig(level=logging.INFO)
 
-_METRIC_KEYS = (
-    'R', 'P', 'F'
-)
+_METRIC_KEYS = ("R", "P", "F")
 
 
 # Clean this up when we have our own wrapper instead of wrapping a wrapper.
+
 
 def _parse_output(prefix, score):
     """
@@ -53,30 +52,30 @@ def _make_rouge(**kwargs):
     :return:
     """
     # Use Python data as input.
-    kwargs.setdefault('summary_file_exist', False)
+    kwargs.setdefault("summary_file_exist", False)
 
     # Disable all preprocessing and postprocessing.
     # don't remove stopwords.
-    kwargs.setdefault('stopwords', False)
+    kwargs.setdefault("stopwords", False)
     # don't do stemming.
-    kwargs.setdefault('stemming', False)
+    kwargs.setdefault("stemming", False)
     # don't do bootstrap resampling
-    kwargs.setdefault('resampling', False)
+    kwargs.setdefault("resampling", False)
     # don't compute confidence interval.
-    kwargs.setdefault('cf', False)
+    kwargs.setdefault("cf", False)
 
     # Disable all metrics by default.
-    kwargs.setdefault('n_gram', -1)  # disable ROUGE-N
-    kwargs.setdefault('ROUGE_L', False)
-    kwargs.setdefault('ROUGE_SU4', False)
-    kwargs.setdefault('ROUGE_W', False)
+    kwargs.setdefault("n_gram", -1)  # disable ROUGE-N
+    kwargs.setdefault("ROUGE_L", False)
+    kwargs.setdefault("ROUGE_SU4", False)
+    kwargs.setdefault("ROUGE_W", False)
 
     # Use default alpha.
-    kwargs.setdefault('favor', False)
+    kwargs.setdefault("favor", False)
     # Evaluate based on words instead of bytes.
-    kwargs.setdefault('word_level', True)
+    kwargs.setdefault("word_level", True)
     # No bytes limit.
-    kwargs.setdefault('length_limit', False)
+    kwargs.setdefault("length_limit", False)
 
     return Pythonrouge(**kwargs)
 
@@ -89,11 +88,7 @@ def _make_rouge_n(summary, reference, n_gram):
     :param n_gram:
     :return:
     """
-    return _make_rouge(
-        summary=summary,
-        reference=reference,
-        n_gram=n_gram
-    )
+    return _make_rouge(summary=summary, reference=reference, n_gram=n_gram)
 
 
 def _make_rouge_l(summary, reference):
@@ -125,7 +120,7 @@ def rouge_n_sentence_level(summary_sentence, reference_sentence, n, alpha=None):
         n_gram=n,
     )
     score = rouge.calc_score()
-    prefix = 'ROUGE-%d-' % n
+    prefix = "ROUGE-%d-" % n
     return _parse_output(prefix, score)
 
 
@@ -144,7 +139,7 @@ def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None)
         n_gram=n,
     )
     score = rouge.calc_score()
-    prefix = 'ROUGE-%d-' % n
+    prefix = "ROUGE-%d-" % n
     return _parse_output(prefix, score)
 
 
@@ -160,7 +155,7 @@ def rouge_l_sentence_level(summary_sentence, reference_sentence, alpha=None):
         summary=[[summary_sentence]],
         reference=[[[reference_sentence]]],
     )
-    prefix = 'ROUGE-L-'
+    prefix = "ROUGE-L-"
     score = rouge.calc_score()
     return _parse_output(prefix, score)
 
@@ -177,7 +172,7 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
         summary=[summary_sentences],
         reference=[[reference_sentences]],
     )
-    prefix = 'ROUGE-L-'
+    prefix = "ROUGE-L-"
     score = rouge.calc_score()
     return _parse_output(prefix, score)
 
@@ -189,7 +184,7 @@ def _get_command(rouge):
     :return:
     """
     cmd = rouge.set_command()
-    return ' '.join(cmd)
+    return " ".join(cmd)
 
 
 def _make_rouge_w(summary, reference):
@@ -206,7 +201,7 @@ def rouge_w_sentence_level(summary_sentence, reference_sentence):
         summary=[[summary_sentence]],
         reference=[[[reference_sentence]]],
     )
-    prefix = 'ROUGE-W-1.2-'
+    prefix = "ROUGE-W-1.2-"
     score = rouge.calc_score()
     # logging.info(_get_command(rouge))
     return _parse_output(prefix, score)
@@ -217,13 +212,11 @@ def rouge_w_summary_level(summary_sentences, reference_sentences):
         summary=[summary_sentences],
         reference=[[reference_sentences]],
     )
-    prefix = 'ROUGE-W-1.2-'
+    prefix = "ROUGE-W-1.2-"
     score = rouge.calc_score()
     # logging.info(_get_command(rouge))
     return _parse_output(prefix, score)
 
 
 def _make_rouge_s(summary, reference):
-    return _make_rouge(
-
-    )
+    return _make_rouge()

@@ -1,17 +1,17 @@
 # MIT License
-# 
+#
 # Copyright (c) 2019 Cong Feng
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -29,11 +29,11 @@ import re
 
 __all__ = ["load_sentence_pairs", "load_summary_pairs", "summary", "reference"]
 
-DATA_PATH = os.path.join(os.path.dirname(__file__), 'data', 'ROUGE-test.json')
+DATA_PATH = os.path.join(os.path.dirname(__file__), "data", "ROUGE-test.json")
 
 # Keys in the json data.
-SUMMARIES = 'summaries'
-REFERENCES = 'references'
+SUMMARIES = "summaries"
+REFERENCES = "references"
 
 
 def load_data():
@@ -59,14 +59,16 @@ def load_summary_pairs():
         summary_sentences = [clean(sentence) for sentence in raw_data[SUMMARIES]]
         reference_sentences = [clean(sentence) for sentence in raw_data[REFERENCES]]
         theirs = (summary_sentences, reference_sentences)
-        ours = ([sentence.split() for sentence in summary_sentences],
-                [sentence.split() for sentence in reference_sentences])
+        ours = (
+            [sentence.split() for sentence in summary_sentences],
+            [sentence.split() for sentence in reference_sentences],
+        )
         yield ours, theirs
 
 
 # One pair of data points.
-summary = 'gunman kill the police'.split()
-reference = 'the police killed the gunman'.split()
+summary = "gunman kill the police".split()
+reference = "the police killed the gunman".split()
 
 
 def clean(sentence):
@@ -83,4 +85,4 @@ def clean(sentence):
     :param sentence:
     :return:
     """
-    return re.sub('[^A-Za-z0-9]', ' ', sentence).lower().strip()
+    return re.sub("[^A-Za-z0-9]", " ", sentence).lower().strip()

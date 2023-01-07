@@ -1,17 +1,17 @@
 # MIT License
-# 
+#
 # Copyright (c) 2019 Cong Feng
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -43,7 +43,7 @@ __all__ = [
     "rouge_s_summary_level",
 ]
 
-RougeScore = collections.namedtuple('RougeScore', 'recall precision f1_measure')
+RougeScore = collections.namedtuple("RougeScore", "recall precision f1_measure")
 
 DEFAULT_ALPHA = 0.9
 DEFAULT_WEIGHT_FACTOR = 1.2
@@ -53,6 +53,7 @@ DEFAULT_SKIP_DISTANCE = 4
 ###############################
 #           ROUGE-N
 ###############################
+
 
 def _num_ngrams(words, n):
     """
@@ -84,7 +85,7 @@ def _get_ngram(words, n):
     :return: a generator
     """
     for i in range(_num_ngrams(words, n)):
-        n_gram = words[i:i + n]
+        n_gram = words[i : i + n]
         yield tuple(n_gram)
 
 
@@ -145,9 +146,9 @@ def _f1_measure(numerator, r_denominator, p_denominator, alpha=None):
     >>> _f1_measure(1, 0, 1, 0.5)
     (0.0, 1.0, 0.0)
 
-    :param numerator: 
-    :param r_denominator: 
-    :param p_denominator: 
+    :param numerator:
+    :param r_denominator:
+    :param p_denominator:
     :param alpha: the weighting factor.
     :return: 3-tuple of recall, precision and f1.
     :raise ValueError: If alpha is not between [0, 1].
@@ -238,6 +239,7 @@ def rouge_n_summary_level(summary_sentences, reference_sentences, n, alpha=None)
 #           ROUGE-L
 ###############################
 
+
 def _lcs_length(x, y):
     """
     Computes the length of the longest common subsequence (lcs) between two
@@ -301,11 +303,11 @@ def _compute_lcs_elements(trace, x, y):
     i, j = len(x), len(y)
     elements = set()
     while i != 0 and j != 0:
-        if trace[i, j] == 'd':
+        if trace[i, j] == "d":
             i -= 1
             j -= 1
             elements.add((i, j))
-        elif trace[i, j] == 'u':
+        elif trace[i, j] == "u":
             i -= 1
         else:
             j -= 1
@@ -342,13 +344,13 @@ def _lcs_elements(x, y):
                 len_table[i, j] = 0
             elif x[i - 1] == y[j - 1]:
                 len_table[i, j] = len_table[i - 1, j - 1] + 1
-                trace_table[i, j] = 'd'  # go diagonal.
+                trace_table[i, j] = "d"  # go diagonal.
             elif len_table[i - 1, j] > len_table[i, j - 1]:
                 len_table[i, j] = len_table[i - 1, j]
-                trace_table[i, j] = 'u'  # go up.
+                trace_table[i, j] = "u"  # go up.
             else:
                 len_table[i, j] = len_table[i, j - 1]
-                trace_table[i, j] = 'l'  # go left.
+                trace_table[i, j] = "l"  # go left.
 
     return _compute_lcs_elements(trace_table, x, y)
 
@@ -421,8 +423,12 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
         lcs_union = _make_lcs_union(summary_sentences, reference)
         for word in lcs_union:
             unigram = (reference[word],)
-            if (unigram in summary_unigrams and unigram in reference_unigrams
-                    and summary_unigrams[unigram] > 0 and reference_unigrams[unigram] > 0):
+            if (
+                unigram in summary_unigrams
+                and unigram in reference_unigrams
+                and summary_unigrams[unigram] > 0
+                and reference_unigrams[unigram] > 0
+            ):
                 summary_unigrams[unigram] -= 1
                 reference_unigrams[unigram] -= 1
                 total_lcs_hits += 1
@@ -435,6 +441,7 @@ def rouge_l_summary_level(summary_sentences, reference_sentences, alpha=None):
 ###############################
 #           ROUGE-W
 ###############################
+
 
 def _weight_fn(x, weight=None, inverse=False):
     """
@@ -459,7 +466,7 @@ def _weight_fn(x, weight=None, inverse=False):
     if weight is None:
         weight = DEFAULT_WEIGHT_FACTOR
     if not weight > 1.0:
-        raise ValueError('weight must be > 1.0')
+        raise ValueError("weight must be > 1.0")
     if inverse:
         weight = 1 / weight
     return math.pow(x, weight)
@@ -488,7 +495,7 @@ def _wlcs_elements(x, y, weight=None):
                 weighted_len[i, j] = 0
                 consecutive_match[i, j] = 0
             elif x[i - 1] == y[j - 1]:
-                trace[i, j] = 'd'
+                trace[i, j] = "d"
                 k = consecutive_match[i - 1, j - 1]
                 update = _weight_fn(k + 1, weight) - _weight_fn(k, weight)
                 weighted_len[i, j] = weighted_len[i - 1, j - 1] + update
@@ -496,10 +503,10 @@ def _wlcs_elements(x, y, weight=None):
             else:
                 consecutive_match[i, j] = 0  # No match
                 if weighted_len[i - 1, j] > weighted_len[i, j - 1]:
-                    trace[i, j] = 'u'
+                    trace[i, j] = "u"
                     weighted_len[i, j] = weighted_len[i - 1, j]
                 else:
-                    trace[i, j] = 'l'
+                    trace[i, j] = "l"
                     weighted_len[i, j] = weighted_len[i, j - 1]
 
     return _compute_lcs_elements(trace, x, y)
@@ -534,7 +541,9 @@ def _divide_and_normalize(n, d, weight):
     return _weight_fn(_divide_or_zero(n, d), weight=weight, inverse=True)
 
 
-def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, alpha=None):
+def rouge_w_summary_level(
+    summary_sentences, reference_sentences, weight=None, alpha=None
+):
     """
     Compute the summary level ROUGE-W.
 
@@ -552,7 +561,9 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     reference_unigrams = _flatten_and_count_ngrams(reference_sentences, 1)
 
     r_denominator = _weight_fn(
-        sum(_weight_fn(len(sentence), weight=weight) for sentence in reference_sentences),
+        sum(
+            _weight_fn(len(sentence), weight=weight) for sentence in reference_sentences
+        ),
         weight=weight,
     )
 
@@ -566,10 +577,12 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
         lcs_union = _make_wlcs_union(summary_sentences, reference)
         for word in lcs_union:
             unigram = (reference[word],)
-            if (unigram in summary_unigrams
-                    and unigram in reference_unigrams
-                    and summary_unigrams[unigram] > 0
-                    and reference_unigrams[unigram] > 0):
+            if (
+                unigram in summary_unigrams
+                and unigram in reference_unigrams
+                and summary_unigrams[unigram] > 0
+                and reference_unigrams[unigram] > 0
+            ):
                 hit_len += 1
                 # If this is the last word of the sentence
                 # or the next word is not part of this consecutive lcs, reset the hit-len.
@@ -585,7 +598,9 @@ def rouge_w_summary_level(summary_sentences, reference_sentences, weight=None, a
     return RougeScore(recall, precision, f1)
 
 
-def rouge_w_sentence_level(summary_sentence, reference_sentence, weight=None, alpha=None):
+def rouge_w_sentence_level(
+    summary_sentence, reference_sentence, weight=None, alpha=None
+):
     """
     Compute the sentence level ROUGE-W.
     This is effectively a weighted version of ROUGE-L.
@@ -596,12 +611,15 @@ def rouge_w_sentence_level(summary_sentence, reference_sentence, weight=None, al
     :param alpha: weight on the recall.
     :return: a 3-tuple, recall, precision and f1 measure.
     """
-    return rouge_w_summary_level([summary_sentence], [reference_sentence], weight, alpha)
+    return rouge_w_summary_level(
+        [summary_sentence], [reference_sentence], weight, alpha
+    )
 
 
 ###############################
 #           ROUGE-S
 ###############################
+
 
 def _get_skip_bigrams(words, skip_distance=None):
     """
@@ -655,7 +673,9 @@ def _count_skip_bigrams(words, skip_distance=None):
     return collections.Counter(_get_skip_bigrams(words, skip_distance))
 
 
-def rouge_s_sentence_level(summary_sentence, reference_sentence, skip_distance=None, alpha=None):
+def rouge_s_sentence_level(
+    summary_sentence, reference_sentence, skip_distance=None, alpha=None
+):
     """
     Compute sentence level ROUGE-S.
 
@@ -677,7 +697,9 @@ def rouge_s_sentence_level(summary_sentence, reference_sentence, skip_distance=N
     )
 
 
-def rouge_s_summary_level(summary_sentences, reference_sentences, skip_distance=None, alpha=None):
+def rouge_s_summary_level(
+    summary_sentences, reference_sentences, skip_distance=None, alpha=None
+):
     """
     Compute summary level ROUGE-S.
 
